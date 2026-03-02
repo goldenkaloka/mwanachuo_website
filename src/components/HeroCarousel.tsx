@@ -1,0 +1,157 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import heroPromo1 from "@/assets/hero-promo-1.jpg";
+import heroPromo2 from "@/assets/hero-promo-2.jpg";
+
+interface Promotion {
+  id: string | number;
+  type: "image" | "video";
+  src: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  priority?: number;
+  is_active?: boolean;
+}
+
+const fallbackPromotions: Promotion[] = [
+  {
+    id: 1,
+    type: "image",
+    src: heroPromo1,
+    title: "Mega Deals This Week",
+    subtitle: "Up to 60% off on electronics, fashion & more",
+    cta: "Shop Now",
+  },
+  {
+    id: 2,
+    type: "image",
+    src: heroPromo2,
+    title: "Flash Sale Live!",
+    subtitle: "Limited time offers on top brands",
+    cta: "Grab Deals",
+  },
+];
+
+const HeroCarousel = () => {
+  const [current, setCurrent] = useState(0);
+  const { data: promotionsData, isLoading } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("promotions")
+          .select("*")
+          .eq("is_active", true)
+          .order("priority", { ascending: false });
+
+        if (error) {
+          console.error("Promotions fetch error:", error);
+          throw error;
+        }
+
+        if (!data || data.length === 0) return fallbackPromotions;
+
+        // Map database columns to component props
+        return data.map(item => ({
+          ...item,
+          src: item.image_url || item.src,
+          cta: item.button_text || item.cta
+        })) as Promotion[];
+      } catch (err) {
+        console.error("HeroCarousel query error:", err);
+        return fallbackPromotions;
+      }
+    },
+  });
+
+  const activePromotions = promotionsData || fallbackPromotions;
+
+  useEffect(() => {
+    if (activePromotions.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % activePromotions.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [activePromotions.length]);
+
+  const prev = () => setCurrent((c) => (c - 1 + activePromotions.length) % activePromotions.length);
+  const next = () => setCurrent((c) => (c + 1) % activePromotions.length);
+
+  if (isLoading) {
+    return <div className="w-full rounded-2xl aspect-[21/9] md:aspect-[3/1] bg-muted animate-pulse" />;
+  }
+
+  return (
+    <section className="relative w-full overflow-hidden rounded-2xl aspect-[21/9] md:aspect-[3/1]">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activePromotions[current].id}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0"
+        >
+          <img
+            src={activePromotions[current].src}
+            alt={activePromotions[current].title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-secondary/80 via-secondary/40 to-transparent" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="px-6 md:px-12 max-w-lg">
+              <motion.h2
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="font-display text-2xl md:text-4xl font-bold text-secondary-foreground mb-2"
+              >
+                {activePromotions[current].title}
+              </motion.h2>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-secondary-foreground/80 text-sm md:text-base mb-4"
+              >
+                {activePromotions[current].subtitle}
+              </motion.p>
+              <motion.button
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity"
+              >
+                {activePromotions[current].cta}
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground hover:bg-card transition-colors">
+        <ChevronLeft size={20} />
+      </button>
+      <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground hover:bg-card transition-colors">
+        <ChevronRight size={20} />
+      </button>
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+        {activePromotions.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-primary" : "w-2 bg-card/60"
+              }`}
+          />
+        ))}
+      </div>
+    </section>
+  );
+};
+
+export default HeroCarousel;
