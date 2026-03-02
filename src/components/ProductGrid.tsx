@@ -1,4 +1,4 @@
-import { Star, ShoppingCart, Loader2 } from "lucide-react";
+import { Star, ShoppingCart, Loader2, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -119,8 +119,16 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
                     {product.rating || "5.0"} ({product.review_count || 0})
                   </span>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-display font-bold text-foreground">{formatPrice(Number(product.price))}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display font-bold text-foreground">{formatPrice(Number(product.price))}</span>
+                  </div>
+                  {product.location && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <MapPin size={10} className="text-primary" />
+                      {product.location}
+                    </span>
+                  )}
                 </div>
               </div>
             </Link>

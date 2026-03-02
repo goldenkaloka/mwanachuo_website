@@ -68,7 +68,7 @@ const AccommodationsSection = () => {
                             {acc.images && acc.images.length > 0 ? (
                                 <img
                                     src={acc.images[0]}
-                                    alt={acc.title}
+                                    alt={acc.name}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                             ) : (
@@ -77,15 +77,15 @@ const AccommodationsSection = () => {
                                 </div>
                             )}
                             <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-lg uppercase">
-                                {acc.type || "Hostel"}
+                                {acc.room_type || "Hostel"}
                             </div>
                         </div>
                         <div className="p-4 flex flex-col justify-between flex-1">
                             <div>
-                                <h3 className="font-display font-bold text-lg text-foreground mb-1 line-clamp-1">{acc.title}</h3>
+                                <h3 className="font-display font-bold text-lg text-foreground mb-1 line-clamp-1">{acc.name}</h3>
                                 <div className="flex items-center gap-1 text-muted-foreground text-xs mb-3">
                                     <MapPin size={12} className="text-primary" />
-                                    <span className="line-clamp-1">{acc.address}</span>
+                                    <span className="line-clamp-1">{acc.location}</span>
                                 </div>
                                 <div className="flex items-center gap-4 mb-4">
                                     <div className="flex items-center gap-1">
@@ -93,14 +93,17 @@ const AccommodationsSection = () => {
                                         <span className="text-xs font-semibold">{acc.rating || "5.0"}</span>
                                     </div>
                                     <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                                        {acc.amenities?.slice(0, 2).join(" • ") || "Fully Furnished"}
+                                        {acc.amenities?.slice(0, 2).join(" • ") || "Verified"}
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between mt-auto">
                                 <div className="flex flex-col">
                                     <span className="text-xs text-muted-foreground">Starting from</span>
-                                    <span className="font-display font-bold text-primary">{formatPrice(Number(acc.price))}<span className="text-[10px] text-muted-foreground font-normal"> /month</span></span>
+                                    <span className="font-display font-bold text-primary">
+                                        {formatPrice(Number(acc.price))}
+                                        <span className="text-[10px] text-muted-foreground font-normal"> /{acc.price_type?.replace('per_', '') || "month"}</span>
+                                    </span>
                                 </div>
                                 <Link
                                     to={`/accommodation/${acc.id}`}
