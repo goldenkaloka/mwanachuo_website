@@ -109,7 +109,7 @@ const AccommodationDetail = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="lg:col-span-2 rounded-3xl overflow-hidden bg-muted shadow-lg"
+                        className="lg:col-span-2 rounded-3xl overflow-hidden bg-muted"
                     >
                         {accommodation.images?.[0] ? (
                             <img src={accommodation.images[0]} alt={accommodation.name} className="w-full h-full object-cover" />
@@ -122,7 +122,7 @@ const AccommodationDetail = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="rounded-3xl overflow-hidden bg-muted shadow-lg"
+                            className="rounded-3xl overflow-hidden bg-muted"
                         >
                             {accommodation.images?.[1] ? (
                                 <img src={accommodation.images[1]} alt={accommodation.name} className="w-full h-full object-cover" />
@@ -134,7 +134,7 @@ const AccommodationDetail = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="rounded-3xl overflow-hidden bg-muted shadow-lg"
+                            className="rounded-md overflow-hidden bg-muted"
                         >
                             {accommodation.images?.[2] ? (
                                 <img src={accommodation.images[2]} alt={accommodation.name} className="w-full h-full object-cover" />
@@ -214,7 +214,7 @@ const AccommodationDetail = () => {
 
                     {/* Side Card */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-24 bg-card border border-border rounded-3xl p-8 shadow-xl shadow-primary/5">
+                        <div className="sticky top-24 bg-card border border-border rounded-3xl p-8">
                             <div className="mb-8">
                                 <div className="flex items-baseline gap-1 mb-2">
                                     <span className="text-4xl font-display font-black text-primary">
@@ -230,14 +230,14 @@ const AccommodationDetail = () => {
                                     href={`https://wa.me/${accommodation.owner?.phone_number?.replace(/\+/g, '') || ''}?text=Hi, I'm interested in viewing ${accommodation.name} on Mwanachuo Shop`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+                                    className="w-full bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                                 >
                                     <MessageSquare size={20} />
                                     Chat via WhatsApp
                                 </a>
                                 <a
                                     href={`tel:${accommodation.owner?.phone_number || ''}`}
-                                    className="w-full bg-secondary text-foreground py-4 rounded-2xl font-bold text-lg hover:bg-secondary/80 transition-all border border-border flex items-center justify-center gap-2"
+                                    className="w-full bg-secondary text-foreground py-4 rounded-md font-bold text-lg hover:bg-secondary/80 transition-all border border-border flex items-center justify-center gap-2"
                                 >
                                     <Phone size={20} />
                                     Call Manager
@@ -245,7 +245,7 @@ const AccommodationDetail = () => {
                             </div>
 
                             <div className="mt-8 pt-8 border-t border-border">
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-muted/50 border border-border/50">
+                                <div className="flex items-start gap-4 p-4 rounded-md bg-muted/50 border border-border/50">
                                     <div className="p-2 rounded-xl bg-success/10 text-success">
                                         <CheckCircle2 size={20} />
                                     </div>

@@ -100,7 +100,7 @@ const ServiceDetail = () => {
                             animate={{ opacity: 1, y: 0 }}
                         >
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                                <span className="px-3 py-1 rounded-sm bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
                                     {service.category || "Service"}
                                 </span>
                                 <div className="flex items-center gap-1 text-brand-gold">
@@ -137,7 +137,7 @@ const ServiceDetail = () => {
                                 <h3 className="text-foreground font-display text-xl font-bold mb-6">Service Features</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {(service.features || service.metadata?.features || ["Student discount available", "Same-day service", "Trusted provider"]).map((feature: string, i: number) => (
-                                        <div key={i} className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border">
+                                        <div key={i} className="flex items-center gap-3 p-4 rounded-md bg-card border border-border">
                                             <CheckCircle2 size={20} className="text-success" />
                                             <span className="text-sm font-medium">{feature}</span>
                                         </div>
@@ -154,7 +154,7 @@ const ServiceDetail = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="sticky top-24 space-y-6"
                         >
-                            <div className="bg-card border border-border rounded-3xl p-8 shadow-xl shadow-primary/5">
+                            <div className="bg-card border border-border rounded-md p-8">
                                 <div className="mb-6">
                                     <span className="text-sm text-muted-foreground block mb-1">Starting from</span>
                                     <div className="flex items-baseline gap-1">
@@ -170,14 +170,14 @@ const ServiceDetail = () => {
                                         href={`https://wa.me/${service.provider?.phone_number?.replace(/\+/g, '') || ''}?text=Hi, I'm interested in your ${service.title} service on Mwanachuo Shop`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+                                        className="w-full bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                                     >
                                         <MessageSquare size={20} />
                                         Chat via WhatsApp
                                     </a>
                                     <a
                                         href={`tel:${service.provider?.phone_number || ''}`}
-                                        className="w-full bg-secondary text-foreground py-4 rounded-2xl font-bold text-lg hover:bg-secondary/80 transition-all border border-border flex items-center justify-center gap-2"
+                                        className="w-full bg-secondary text-foreground py-4 rounded-md font-bold text-lg hover:bg-secondary/80 transition-all border border-border flex items-center justify-center gap-2"
                                     >
                                         <Phone size={20} />
                                         Call Provider
@@ -187,7 +187,7 @@ const ServiceDetail = () => {
                                 <div className="pt-6 border-t border-border">
                                     <h4 className="font-bold text-sm mb-4">Provider Information</h4>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden">
+                                        <div className="w-12 h-12 rounded-sm bg-muted overflow-hidden">
                                             <img
                                                 src={service.provider?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
                                                 alt={service.provider?.full_name}
@@ -202,7 +202,7 @@ const ServiceDetail = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex items-start gap-4">
+                            <div className="bg-primary/5 border border-primary/20 rounded-md p-6 flex items-start gap-4">
                                 <div className="p-2 rounded-xl bg-primary text-primary-foreground">
                                     <CreditCard size={20} />
                                 </div>

@@ -53,7 +53,7 @@ const Login = () => {
                     <p className="text-muted-foreground mt-2">Login to your student account</p>
                 </div>
 
-                <div className="bg-card p-8 rounded-3xl border border-border shadow-xl">
+                <div className="bg-card p-8 rounded-md border border-border">
                     <form onSubmit={handleLogin} className="space-y-4">
                         {error && (
                             <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm flex items-center gap-2">
@@ -71,7 +71,7 @@ const Login = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                     placeholder="name@university.edu"
                                 />
                             </div>
@@ -86,7 +86,7 @@ const Login = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -95,7 +95,7 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20"
+                            className="w-full bg-primary text-primary-foreground py-3 rounded-md font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn size={18} />}
                             {loading ? "Logging in..." : "Login"}

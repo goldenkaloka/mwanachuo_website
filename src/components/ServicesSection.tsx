@@ -63,7 +63,7 @@ const ServicesSection = () => {
         <button className="text-sm font-semibold text-primary hover:underline">View all</button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
         {services.map((service, i) => {
           const Icon = iconMap[service.category?.toLowerCase()] || Wrench;
           return (
@@ -72,7 +72,7 @@ const ServicesSection = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="relative group rounded-2xl border bg-card border-border hover:border-primary/30 hover:shadow-product-hover transition-all duration-300 cursor-pointer overflow-hidden"
+              className="relative group rounded-md border bg-card border-border hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
             >
               <Link to={`/service/${service.id}`} className="p-4 md:p-5 block h-full">
                 <div className="flex items-start justify-between mb-3">

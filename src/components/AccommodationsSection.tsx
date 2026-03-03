@@ -55,14 +55,14 @@ const AccommodationsSection = () => {
                 <button className="text-sm font-semibold text-primary hover:underline">See all</button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {accommodations.map((acc, i) => (
                     <motion.div
                         key={acc.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="flex flex-col sm:flex-row bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-product-hover transition-all duration-300 group"
+                        className="flex flex-col bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 group"
                     >
                         <div className="w-full sm:w-48 h-48 shrink-0 bg-muted relative">
                             {acc.images && acc.images.length > 0 ? (

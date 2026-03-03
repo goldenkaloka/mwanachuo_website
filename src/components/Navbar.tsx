@@ -18,28 +18,28 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-50 glass-premium text-white">
       <div className="container mx-auto px-4">
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-foreground">
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-primary-foreground">
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <Link to="/" className="font-display text-xl md:text-2xl font-bold">
-              <span className="text-primary">mwanachuo</span>
-              <span className="text-foreground">shop</span>
+            <Link to="/" className="font-display text-2xl md:text-3xl font-black tracking-tighter">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">mwanachuo</span>
+              <span className="text-white/40 font-medium">shop</span>
             </Link>
           </div>
 
           {/* Location button */}
           <button
             onClick={() => setLocationOpen(!locationOpen)}
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm font-medium text-foreground hover:bg-muted/80 transition-colors max-w-[200px]"
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-sm font-medium text-primary-foreground hover:bg-white/20 transition-all border border-white/10"
           >
-            <MapPin size={16} className="text-primary shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">{user ? "Your Campus" : "Deliver to"}</span>
-            <span className="font-semibold truncate">
+            <MapPin size={16} className="text-white shrink-0" />
+            <span className="text-white/50 text-[10px] uppercase font-bold tracking-widest">{user ? "Your Campus" : "Deliver to"}</span>
+            <span className="font-bold truncate text-white leading-none">
               {selectedUniversity?.name || "Select University"}
             </span>
           </button>
@@ -47,13 +47,13 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
           {/* Search bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-4">
             <div className="relative w-full">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
               <input
                 type="text"
                 placeholder="Search products, services..."
                 value={searchQuery}
                 onChange={(e) => onSearch?.(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-muted border-none text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] focus:ring-1 focus:ring-white/20 transition-all"
               />
             </div>
           </div>
@@ -61,7 +61,7 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
           <div className="flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/dashboard" className="p-2 rounded-lg hover:bg-muted transition-colors text-foreground" title="Profile">
+                <Link to="/dashboard" className="p-2 rounded-lg hover:bg-white/10 transition-colors text-primary-foreground" title="Profile">
                   <User size={22} />
                 </Link>
                 <button
@@ -72,13 +72,13 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md hover:bg-primary/90 transition-all">
+              <Link to="/login" className="px-5 py-2.5 rounded-md bg-white text-primary text-sm font-bold hover:bg-white/90 transition-all active:scale-95">
                 Login
               </Link>
             )}
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors text-foreground">
+            <button className="relative p-2 rounded-lg hover:bg-white/10 transition-colors text-primary-foreground">
               <ShoppingCart size={22} />
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-sm bg-secondary text-secondary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-primary">
                 0
               </span>
             </button>
@@ -88,20 +88,20 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
         {/* Mobile search */}
         <div className="md:hidden pb-3">
           <div className="relative w-full">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
             <input
               type="text"
               placeholder="Search products, services..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-muted border-none text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white/10 border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none"
             />
           </div>
           <button
             onClick={() => setLocationOpen(!locationOpen)}
-            className="mt-2 flex items-center gap-2 text-sm text-muted-foreground w-full"
+            className="mt-2 flex items-center gap-2 text-sm text-white/70 w-full"
           >
-            <MapPin size={14} className="text-primary shrink-0" />
+            <MapPin size={14} className="text-white shrink-0" />
             <span className="whitespace-nowrap">Delivering to</span>
-            <span className="font-semibold text-foreground truncate">
+            <span className="font-semibold text-white truncate">
               {selectedUniversity?.name || "Select University"}
             </span>
           </button>
@@ -129,10 +129,10 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
       </AnimatePresence>
 
       {/* Category bar - desktop */}
-      <nav className="hidden lg:block bg-secondary">
-        <div className="container mx-auto px-4 flex items-center gap-6 h-10">
+      <nav className="hidden lg:block bg-black/40 backdrop-blur-sm border-t border-white/[0.03]">
+        <div className="container mx-auto px-4 flex items-center gap-8 h-12">
           {["Electronics", "Fashion", "Home & Garden", "Services", "Groceries", "Health & Beauty", "Sports"].map((cat) => (
-            <a key={cat} href="#" className="text-xs font-medium text-secondary-foreground/80 hover:text-primary transition-colors whitespace-nowrap">
+            <a key={cat} href="#" className="text-[10px] font-black text-white/40 hover:text-white transition-all whitespace-nowrap uppercase tracking-[0.15em] hover:scale-105">
               {cat}
             </a>
           ))}

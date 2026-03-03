@@ -106,7 +106,7 @@ const Dashboard = () => {
   const stats = [
     { label: "Active Listings", value: myListings?.total || 0, icon: LayoutDashboard, color: "text-blue-500" },
     { label: "Wallet Balance", value: `TSh ${wallet?.balance?.toLocaleString() || 0}`, icon: Wallet, color: "text-green-500" },
-    { label: "Total Views", value: "248", icon: Eye, color: "text-orange-500" }, // Mocked for now
+    { label: "Total Views", value: "248", icon: Eye, color: "text-teal-500" }, // Mocked for now
     { label: "New Alerts", value: notifications?.filter(n => !n.is_read).length || 0, icon: Bell, color: "text-purple-500" },
   ];
 
@@ -134,7 +134,7 @@ const Dashboard = () => {
                 key={nav.id}
                 onClick={() => setActiveTab(nav.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === nav.id
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
                   }`}
               >
@@ -182,7 +182,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground mt-1 text-sm md:text-base">Here's what's happening with your account today.</p>
             </div>
             <Link to="/create-listing">
-              <Button className="rounded-xl px-6 h-12 gap-2 shadow-lg shadow-primary/20">
+              <Button className="rounded-xl px-6 h-12 gap-2">
                 <Plus size={18} />
                 Add New Listing
               </Button>
@@ -192,7 +192,7 @@ const Dashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat, i) => (
-              <Card key={i} className="border-none shadow-sm hover:shadow-md transition-all">
+              <Card key={i} className="border-none transition-all">
                 <CardContent className="p-6">
                   <div className={`p-2 w-10 h-10 rounded-xl bg-card border border-border mb-4 flex items-center justify-center ${stat.color}`}>
                     <stat.icon size={20} />
@@ -221,7 +221,7 @@ const Dashboard = () => {
                     ) : (
                       <div className="grid gap-4">
                         {[...(myListings?.products || []), ...(myListings?.services || [])].slice(0, 3).map((item: any) => (
-                          <div key={item.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:shadow-sm transition-all group">
+                          <div key={item.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-md transition-all group">
                             <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0">
                               {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
                             </div>
@@ -248,7 +248,7 @@ const Dashboard = () => {
 
                 <div className="space-y-8">
                   {/* Wallet Card Glassmorphism */}
-                  <Card className="border-none bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-xl overflow-hidden relative">
+                  <Card className="border-none bg-gradient-to-br from-primary to-accent text-primary-foreground overflow-hidden relative">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
                     <CardHeader className="relative z-10">
                       <CardTitle className="text-sm font-medium opacity-80 uppercase tracking-widest">Available Balance</CardTitle>
@@ -263,7 +263,7 @@ const Dashboard = () => {
                   </Card>
 
                   {/* Recent Notifications */}
-                  <Card className="border-none shadow-sm h-full">
+                  <Card className="border-none h-full">
                     <CardHeader>
                       <CardTitle className="text-sm font-bold">Recent Notifications</CardTitle>
                     </CardHeader>
@@ -291,13 +291,13 @@ const Dashboard = () => {
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                     <h2 className="text-xl font-bold font-display">Wallet Management</h2>
-                    <Card className="bg-card border border-border shadow-sm">
+                    <Card className="bg-card border border-border">
                       <CardHeader>
                         <CardTitle className="text-sm">Quick Top Up</CardTitle>
                         <CardDescription>Add funds to your account via mobile money</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-4 bg-muted/50 rounded-2xl border border-dashed flex items-center justify-between">
+                        <div className="p-4 bg-muted/50 rounded-md border border-dashed flex items-center justify-between">
                           <div>
                             <p className="text-xs font-bold uppercase text-primary">M-Pesa / Tigo Pesa</p>
                             <p className="text-sm font-bold mt-1">Paybill: 400700</p>
@@ -314,9 +314,9 @@ const Dashboard = () => {
                     <h2 className="text-xl font-bold font-display mb-6">Recent Transactions</h2>
                     <div className="space-y-3">
                       {wallet?.transactions?.map((tx: any) => (
-                        <div key={tx.id} className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border shadow-sm">
+                        <div key={tx.id} className="flex items-center justify-between p-4 bg-card rounded-md border border-border">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                            <div className={`p-2 rounded-lg ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-teal-500/10 text-teal-500'}`}>
                               {tx.type === 'deposit' ? <TrendingUp size={16} /> : <History size={16} />}
                             </div>
                             <div>
@@ -324,7 +324,7 @@ const Dashboard = () => {
                               <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          <p className={`text-xs font-bold ${tx.type === 'deposit' ? 'text-green-500' : 'text-orange-500'}`}>
+                          <p className={`text-xs font-bold ${tx.type === 'deposit' ? 'text-green-500' : 'text-teal-500'}`}>
                             {tx.type === 'deposit' ? '+' : '-'} {tx.amount.toLocaleString()}
                           </p>
                         </div>
@@ -347,8 +347,8 @@ const Dashboard = () => {
                       <div className="aspect-video relative overflow-hidden bg-muted">
                         {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
                         <div className="absolute top-2 right-2">
-                          <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none shadow-sm">
-                            {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-orange-500" />}
+                          <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none">
+                            {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-teal-500" />}
                             {item.is_active ? 'Visible' : 'Inactive'}
                           </Badge>
                         </div>
@@ -377,7 +377,7 @@ const Dashboard = () => {
                   <Button variant="ghost" size="sm" className="text-xs">Mark all as read</Button>
                 </div>
                 {notifications?.map((notif: any) => (
-                  <div key={notif.id} className={`p-4 rounded-2xl border transition-all flex gap-4 ${notif.is_read ? 'bg-card border-border' : 'bg-primary/5 border-primary/20 shadow-sm'}`}>
+                  <div key={notif.id} className={`p-4 rounded-md border transition-all flex gap-4 ${notif.is_read ? 'bg-card border-border' : 'bg-primary/5 border-primary/20'}`}>
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${notif.is_read ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}`}>
                       <Bell size={18} />
                     </div>
@@ -405,16 +405,16 @@ const Dashboard = () => {
 
             {activeTab === "profile" && (
               <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl">
-                <Card className="border-none shadow-sm overflow-hidden">
+                <Card className="border-none overflow-hidden">
                   <div className="h-24 bg-gradient-to-r from-primary/10 to-accent/10" />
                   <CardContent className="p-8 -mt-12">
                     <div className="flex flex-col md:flex-row gap-6 items-end mb-8">
                       <div className="relative">
-                        <Avatar className="w-24 h-24 border-4 border-card shadow-lg">
+                        <Avatar className="w-24 h-24 border-4 border-card">
                           <AvatarImage src={profile?.avatar_url} />
                           <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <button className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-primary-foreground shadow-lg"><Camera size={14} /></button>
+                        <button className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-primary-foreground"><Camera size={14} /></button>
                       </div>
                       <div className="flex-1 pb-1">
                         <h3 className="text-xl font-bold">{profile?.full_name}</h3>
@@ -441,7 +441,7 @@ const Dashboard = () => {
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Biography</label>
                         <Input defaultValue={profile?.bio} placeholder="Tell others about yourself..." className="rounded-xl h-11" />
                       </div>
-                      <Button className="w-full rounded-xl h-12 font-bold shadow-lg shadow-primary/20 mt-4">Save Profile Changes</Button>
+                      <Button className="w-full rounded-xl h-12 font-bold mt-4">Save Profile Changes</Button>
                     </form>
                   </CardContent>
                 </Card>

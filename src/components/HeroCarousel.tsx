@@ -82,11 +82,11 @@ const HeroCarousel = () => {
   const next = () => setCurrent((c) => (c + 1) % activePromotions.length);
 
   if (isLoading) {
-    return <div className="w-full rounded-2xl aspect-[21/9] md:aspect-[3/1] bg-muted animate-pulse" />;
+    return <div className="w-full rounded-md aspect-[21/9] md:aspect-[3/1] bg-muted animate-pulse" />;
   }
 
   return (
-    <section className="relative w-full overflow-hidden rounded-2xl aspect-[21/9] md:aspect-[3/1]">
+    <section className="relative w-full overflow-hidden rounded-md aspect-[21/9] md:aspect-[3/1]">
       <AnimatePresence mode="wait">
         <motion.div
           key={activePromotions[current].id}
@@ -101,14 +101,14 @@ const HeroCarousel = () => {
             alt={activePromotions[current].title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-secondary/80 via-secondary/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-transparent" />
           <div className="absolute inset-0 flex items-center">
             <div className="px-6 md:px-12 max-w-lg">
               <motion.h2
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="font-display text-2xl md:text-4xl font-bold text-secondary-foreground mb-2"
+                className="font-display text-3xl md:text-6xl font-black text-white mb-4 tracking-tighter leading-none"
               >
                 {activePromotions[current].title}
               </motion.h2>
@@ -116,7 +116,7 @@ const HeroCarousel = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-secondary-foreground/80 text-sm md:text-base mb-4"
+                className="text-white/60 text-base md:text-xl mb-8 font-medium leading-relaxed max-w-sm"
               >
                 {activePromotions[current].subtitle}
               </motion.p>
@@ -124,7 +124,7 @@ const HeroCarousel = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity"
+                className="px-8 py-4 bg-primary text-white rounded-md font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
               >
                 {activePromotions[current].cta}
               </motion.button>

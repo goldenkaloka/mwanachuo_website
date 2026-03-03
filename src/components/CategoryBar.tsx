@@ -27,7 +27,7 @@ const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
       <div className="flex items-center gap-2">
         <button
           onClick={() => onSelect(null)}
-          className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all border ${!activeCategory ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" : "bg-card text-muted-foreground border-border hover:border-primary/30"}`}
+          className={`px-5 py-2.5 rounded-md text-sm font-bold whitespace-nowrap transition-all border ${!activeCategory ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/30"}`}
         >
           All Items
         </button>
@@ -35,7 +35,7 @@ const CategoryBar = ({ activeCategory, onSelect }: CategoryBarProps) => {
           <button
             key={category.id}
             onClick={() => onSelect(category.label)}
-            className={`px-5 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all border ${activeCategory === category.label ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" : "bg-card text-muted-foreground border-border hover:border-primary/30"}`}
+            className={`px-5 py-2.5 rounded-md text-sm font-bold whitespace-nowrap transition-all border ${activeCategory === category.label ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/30"}`}
           >
             {category.label}
           </button>

@@ -98,7 +98,7 @@ const ProductDetail = () => {
                         animate={{ opacity: 1, x: 0 }}
                         className="space-y-4"
                     >
-                        <div className="aspect-square rounded-3xl overflow-hidden bg-muted shadow-xl border border-border">
+                        <div className="aspect-square rounded-md overflow-hidden bg-muted border border-border">
                             {product.images?.[0] ? (
                                 <img
                                     src={product.images[0]}
@@ -112,7 +112,7 @@ const ProductDetail = () => {
                         {product.images?.length > 1 && (
                             <div className="grid grid-cols-4 gap-4">
                                 {product.images.slice(1, 5).map((img: string, i: number) => (
-                                    <div key={i} className="aspect-square rounded-xl overflow-hidden bg-muted border border-border cursor-pointer hover:border-primary transition-colors">
+                                    <div key={i} className="aspect-square rounded-sm overflow-hidden bg-muted border border-border cursor-pointer hover:border-primary transition-colors">
                                         <img src={img} alt={`${product.title} ${i + 2}`} className="w-full h-full object-cover" />
                                     </div>
                                 ))}
@@ -128,16 +128,16 @@ const ProductDetail = () => {
                     >
                         <div className="mb-6">
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                                <span className="px-3 py-1 rounded-sm bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
                                     {product.category || "General"}
                                 </span>
                                 {product.condition && (
-                                    <span className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-bold uppercase tracking-wider">
+                                    <span className="px-3 py-1 rounded-sm bg-secondary text-secondary-foreground text-xs font-bold uppercase tracking-wider">
                                         {product.condition}
                                     </span>
                                 )}
                                 {product.is_featured && (
-                                    <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider">
+                                    <span className="px-3 py-1 rounded-sm bg-accent text-accent-foreground text-xs font-bold uppercase tracking-wider">
                                         Featured
                                     </span>
                                 )}
@@ -163,7 +163,7 @@ const ProductDetail = () => {
                             </div>
                         </div>
 
-                        <div className="mb-8 p-6 rounded-3xl bg-secondary/50 border border-border">
+                        <div className="mb-8 p-6 rounded-md bg-secondary/50 border border-border">
                             <span className="text-sm text-muted-foreground block mb-1">Total Price</span>
                             <div className="flex items-baseline gap-3">
                                 <span className="text-4xl font-display font-black text-primary">
@@ -178,7 +178,7 @@ const ProductDetail = () => {
                         </div>
 
                         <div className="space-y-6 mb-8">
-                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/20 transition-colors">
+                            <div className="flex items-start gap-4 p-4 rounded-md bg-card border border-border hover:border-primary/20 transition-colors">
                                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                     <Truck size={20} />
                                 </div>
@@ -187,7 +187,7 @@ const ProductDetail = () => {
                                     <p className="text-xs text-muted-foreground">Fast delivery to hostels and cafeteria areas.</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/20 transition-colors">
+                            <div className="flex items-start gap-4 p-4 rounded-md bg-card border border-border hover:border-primary/20 transition-colors">
                                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                     <RefreshCcw size={20} />
                                 </div>
@@ -203,7 +203,7 @@ const ProductDetail = () => {
                                 href={`https://wa.me/${product.seller?.phone_number?.replace(/\+/g, '') || ''}?text=Hi, I'm interested in your ${product.title} on Mwanachuo Shop`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex-1 bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+                                className="flex-1 bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                             >
                                 <MessageCircle size={20} />
                                 Chat via WhatsApp
@@ -211,11 +211,11 @@ const ProductDetail = () => {
                             <div className="flex gap-2">
                                 <a
                                     href={`tel:${product.seller?.phone_number || ''}`}
-                                    className="p-4 rounded-2xl bg-secondary text-foreground hover:bg-secondary/80 transition-all border border-border flex items-center justify-center"
+                                    className="p-4 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-all border border-border flex items-center justify-center"
                                 >
                                     <Truck size={20} />
                                 </a>
-                                <button className="p-4 rounded-2xl bg-secondary text-foreground hover:bg-secondary/80 transition-all border border-border">
+                                <button className="p-4 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-all border border-border">
                                     <Share2 size={20} />
                                 </button>
                             </div>

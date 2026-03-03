@@ -19,7 +19,7 @@ const LocationSelector = ({ open, onClose }: LocationSelectorProps) => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-card rounded-2xl shadow-xl z-50 p-5"
+            className="fixed top-20 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-card rounded-2xl border border-border z-50 p-5"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-lg font-bold text-foreground">Select your University</h3>
@@ -45,8 +45,8 @@ const LocationSelector = ({ open, onClose }: LocationSelectorProps) => {
                       onClose();
                     }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${selectedUniversity?.id === uni.id
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-muted text-foreground hover:bg-muted/70"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground hover:bg-muted/70"
                       }`}
                   >
                     <MapPin size={16} className={selectedUniversity?.id === uni.id ? "text-primary-foreground" : "text-primary"} />

@@ -79,14 +79,14 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
         <button className="text-sm font-semibold text-primary hover:underline">See all</button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
         {products.map((product, i) => (
           <motion.div
             key={product.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="group bg-card rounded-2xl overflow-hidden shadow-product hover:shadow-product-hover transition-all duration-300"
+            className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
           >
             <Link to={`/product/${product.id}`}>
               <div className="relative aspect-square overflow-hidden bg-muted">

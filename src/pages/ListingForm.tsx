@@ -200,9 +200,9 @@ const CreateListing = () => {
                             <h2 className="text-lg font-bold mb-2">What are you listing today?</h2>
                             <div
                                 onClick={() => { setType("product"); setStep(2); }}
-                                className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "product" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
+                                className={`p-6 rounded-md border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "product" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
                             >
-                                <div className="p-4 rounded-2xl bg-primary/10 text-primary">
+                                <div className="p-4 rounded-md bg-primary/10 text-primary">
                                     <Package size={28} />
                                 </div>
                                 <div>
@@ -213,9 +213,9 @@ const CreateListing = () => {
 
                             <div
                                 onClick={() => { setType("service"); setStep(2); }}
-                                className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "service" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
+                                className={`p-6 rounded-md border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "service" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
                             >
-                                <div className="p-4 rounded-2xl bg-secondary text-foreground">
+                                <div className="p-4 rounded-md bg-secondary text-foreground">
                                     <Wrench size={28} />
                                 </div>
                                 <div>
@@ -226,9 +226,9 @@ const CreateListing = () => {
 
                             <div
                                 onClick={() => { setType("accommodation"); setStep(2); }}
-                                className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "accommodation" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
+                                className={`p-6 rounded-md border-2 transition-all cursor-pointer flex items-center gap-6 ${type === "accommodation" ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"}`}
                             >
-                                <div className="p-4 rounded-2xl bg-accent text-accent-foreground">
+                                <div className="p-4 rounded-md bg-accent text-accent-foreground">
                                     <Bed size={28} />
                                 </div>
                                 <div>
@@ -244,7 +244,7 @@ const CreateListing = () => {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                         >
-                            <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border p-8 rounded-3xl shadow-xl shadow-primary/5">
+                            <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border p-8 rounded-md">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold ml-1">Title</label>
@@ -253,7 +253,7 @@ const CreateListing = () => {
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder={type === "product" ? "e.g. Calculus Textbook" : type === "service" ? "e.g. Thesis Proofreading" : "e.g. Single Room near Gate A"}
-                                            className="w-full px-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                            className="w-full px-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                         />
                                     </div>
 
@@ -344,7 +344,7 @@ const CreateListing = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+                                    className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                                 >
                                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
                                     {loading ? "Publishing..." : "Create Listing"}

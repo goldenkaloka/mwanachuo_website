@@ -122,7 +122,7 @@ const Signup = () => {
                     <p className="text-muted-foreground mt-2">Join the student marketplace</p>
                 </div>
 
-                <div className="bg-card p-8 rounded-3xl border border-border shadow-xl">
+                <div className="bg-card p-8 rounded-md border border-border">
                     <form onSubmit={handleSignup} className="space-y-4">
                         {error && (
                             <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm flex items-center gap-2">
@@ -131,11 +131,11 @@ const Signup = () => {
                             </div>
                         )}
 
-                        <div className="flex bg-muted p-1 rounded-2xl mb-6">
+                        <div className="flex bg-muted p-1 rounded-md mb-6">
                             <button
                                 type="button"
                                 onClick={() => setUserType("student")}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${userType === "student" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`flex-1 py-2.5 rounded-sm text-sm font-bold transition-all ${userType === "student" ? "bg-card text-foreground border border-border" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 <GraduationCap size={16} className="inline mr-2" />
                                 Student
@@ -143,7 +143,7 @@ const Signup = () => {
                             <button
                                 type="button"
                                 onClick={() => setUserType("business")}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${userType === "business" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`flex-1 py-2.5 rounded-sm text-sm font-bold transition-all ${userType === "business" ? "bg-card text-foreground border border-border" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 <Briefcase size={16} className="inline mr-2" />
                                 Business
@@ -161,7 +161,7 @@ const Signup = () => {
                                             required
                                             value={businessName}
                                             onChange={(e) => setBusinessName(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                            className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                             placeholder="Brand Name"
                                         />
                                     </div>
@@ -172,7 +172,7 @@ const Signup = () => {
                                         required
                                         value={businessCategory}
                                         onChange={(e) => setBusinessCategory(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
+                                        className="w-full px-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
                                     >
                                         <option value="">Select Category</option>
                                         <option value="electronics">Electronics Store</option>
@@ -194,7 +194,7 @@ const Signup = () => {
                                     required
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                     placeholder="John Doe"
                                 />
                             </div>
@@ -208,7 +208,7 @@ const Signup = () => {
                                     required
                                     value={universityId}
                                     onChange={(e) => setUniversityId(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
                                 >
                                     <option value="">Select your university</option>
                                     {universities.map((uni) => (
@@ -228,7 +228,7 @@ const Signup = () => {
                                         required
                                         value={yearOfStudy}
                                         onChange={(e) => setYearOfStudy(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
+                                        className="w-full px-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
                                     >
                                         <option value="">Select Year</option>
                                         {[1, 2, 3, 4, 5, 6, 7].map(year => (
@@ -242,7 +242,7 @@ const Signup = () => {
                                         required
                                         value={semester}
                                         onChange={(e) => setSemester(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
+                                        className="w-full px-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
                                     >
                                         <option value="">Select Semester</option>
                                         <option value="1">Semester 1</option>
@@ -262,7 +262,7 @@ const Signup = () => {
                                         value={courseId}
                                         onChange={(e) => setCourseId(e.target.value)}
                                         disabled={loadingCourses || !universityId}
-                                        className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none disabled:opacity-50"
+                                        className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none disabled:opacity-50"
                                     >
                                         <option value="">{loadingCourses ? "Loading courses..." : "Select your course"}</option>
                                         {courses.map((course) => (
@@ -284,7 +284,7 @@ const Signup = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                     placeholder="name@university.edu"
                                 />
                             </div>
@@ -299,7 +299,7 @@ const Signup = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
+                                    className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -308,7 +308,7 @@ const Signup = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-primary-foreground py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20"
+                            className="w-full bg-primary text-primary-foreground py-3 rounded-md font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus size={18} />}
                             {loading ? "Creating account..." : "Sign up"}
