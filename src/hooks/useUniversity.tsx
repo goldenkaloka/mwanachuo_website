@@ -13,6 +13,7 @@ type UniversityContextType = {
     setUniversity: (university: University) => void;
     universities: University[];
     loading: boolean;
+    isInitialized: boolean;
 };
 
 const UniversityContext = createContext<UniversityContextType>({
@@ -20,6 +21,7 @@ const UniversityContext = createContext<UniversityContextType>({
     setUniversity: () => { },
     universities: [],
     loading: true,
+    isInitialized: false,
 });
 
 export const UniversityProvider = ({ children }: { children: React.ReactNode }) => {
@@ -27,6 +29,7 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
     const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
     const [universities, setUniversities] = useState<University[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     // 1. Initial Universities Fetch
     useEffect(() => {
@@ -52,30 +55,54 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
 
     // 2. Initial selection & Sync
     useEffect(() => {
-        if (universities.length === 0) return;
+        const syncUniversity = () => {
+            if (universities.length === 0) return;
 
-        // Try to load from localStorage first for immediate UI
-        if (!selectedUniversity) {
-            const savedId = localStorage.getItem('selected_university_id');
-            if (savedId) {
-                const savedUni = universities.find(u => u.id === savedId);
-                if (savedUni) {
-                    console.log('[useUniversity] Loaded from localStorage:', savedUni.name);
-                    setSelectedUniversity(savedUni);
+            // Priority 1: User Profile (Database)
+            if (user && profile?.primary_university_id) {
+                const profileUni = universities.find(u => u.id === profile.primary_university_id);
+                if (profileUni) {
+                    if (selectedUniversity?.id !== profileUni.id) {
+                        console.log('[useUniversity] Syncing with database profile:', profileUni.name);
+                        setSelectedUniversity(profileUni);
+                    }
+                    // Always keep localStorage in sync with database for guest fallback
+                    localStorage.setItem('selected_university_id', profileUni.id);
+                    return;
                 }
             }
-        }
 
-        // Overwrite/Sync with profile if user is logged in
-        if (user && profile?.primary_university_id) {
-            const profileUni = universities.find(u => u.id === profile.primary_university_id);
-            if (profileUni && selectedUniversity?.id !== profileUni.id) {
-                console.log('[useUniversity] Syncing with profile:', profileUni.name);
-                setSelectedUniversity(profileUni);
-                localStorage.setItem('selected_university_id', profileUni.id);
+            // Priority 2: Local Storage (Guest or persistent choice)
+            const savedId = localStorage.getItem('selected_university_id');
+            if (savedId && !selectedUniversity) {
+                const savedUni = universities.find(u => u.id === savedId);
+                if (savedUni) {
+                    console.log('[useUniversity] Loading from localStorage:', savedUni.name);
+                    setSelectedUniversity(savedUni);
+                    return;
+                }
+            }
+
+            // Priority 3: No selection
+            // We removed the auto-select first university logic to allow for a "Select University" state
+        };
+
+        syncUniversity();
+        setIsInitialized(true);
+    }, [user, profile?.primary_university_id, universities]);
+
+    // 3. Cleanup on Logout
+    useEffect(() => {
+        if (!user && isInitialized) {
+            // Check if we actually HAVE a user university currently but no user
+            // This happens right after signOut
+            const hasSavedUni = localStorage.getItem('selected_university_id');
+            if (!hasSavedUni && selectedUniversity) {
+                console.log('[useUniversity] Finalizing logout cleanup');
+                setSelectedUniversity(null);
             }
         }
-    }, [user, profile, universities]);
+    }, [user, isInitialized, selectedUniversity]);
 
     const setUniversity = async (university: University) => {
         console.log('[useUniversity] Setting university:', university.name);
@@ -102,7 +129,7 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
     };
 
     return (
-        <UniversityContext.Provider value={{ selectedUniversity, setUniversity, universities, loading }}>
+        <UniversityContext.Provider value={{ selectedUniversity, setUniversity, universities, loading, isInitialized }}>
             {children}
         </UniversityContext.Provider>
     );

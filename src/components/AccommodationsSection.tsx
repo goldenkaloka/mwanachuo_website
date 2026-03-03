@@ -12,7 +12,7 @@ const formatPrice = (price: number) => {
 const AccommodationsSection = () => {
     const { selectedUniversity } = useUniversity();
 
-    const { data: accommodations, isLoading } = useQuery({
+    const { data: accommodations, isLoading, isError } = useQuery({
         queryKey: ["accommodations", selectedUniversity?.id],
         queryFn: async () => {
             let query = supabase
@@ -41,6 +41,8 @@ const AccommodationsSection = () => {
         );
     }
 
+    if (isError) return null;
+
     if (!accommodations || accommodations.length === 0) {
         return null;
     }
@@ -52,7 +54,7 @@ const AccommodationsSection = () => {
                     <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Find a place to stay</h2>
                     <p className="text-sm text-muted-foreground mt-1">Hostels and rooms near {selectedUniversity?.name || "campus"}</p>
                 </div>
-                <button className="text-sm font-semibold text-primary hover:underline">See all</button>
+                <Link to="/accommodations" className="text-sm font-semibold text-primary hover:underline">See all</Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">

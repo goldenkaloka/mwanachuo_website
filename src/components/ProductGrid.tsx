@@ -12,7 +12,7 @@ const formatPrice = (price: number) => {
 const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string | null, searchFilter?: string | null }) => {
   const { selectedUniversity } = useUniversity();
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, isError, error: queryError } = useQuery({
     queryKey: ["products", selectedUniversity?.id, categoryFilter, searchFilter],
     queryFn: async () => {
       try {
@@ -76,7 +76,7 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
           </h2>
           <p className="text-sm text-muted-foreground mt-1">Based on your location preferences</p>
         </div>
-        <button className="text-sm font-semibold text-primary hover:underline">See all</button>
+        <Link to="/products" className="text-sm font-semibold text-primary hover:underline">See all</Link>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">

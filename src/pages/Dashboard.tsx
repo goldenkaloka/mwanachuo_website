@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, MapPin, Camera, Save, ArrowLeft, Loader2,
   Package, Wrench, Bed, Plus, Wallet, Bell, Trash2,
   Settings, LayoutDashboard, CreditCard, History,
-  TrendingUp, Eye, CheckCircle2, AlertCircle, Clock
+  TrendingUp, Eye, CheckCircle2, AlertCircle, Clock,
+  Menu, X
 } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,23 +15,38 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useUniversity } from "@/hooks/useUniversity";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Dashboard = () => {
-  const { user, profile, loading, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { user, profile, signOut, updateProfile } = useAuth();
+  const { selectedUniversity, universities, setUniversity } = useUniversity();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   useEffect(() => {
     console.log('[Dashboard] State change:', {
       hasUser: !!user,
       hasProfile: !!profile,
-      loading
+      loading: !user && !profile
     });
-  }, [user, profile, loading]);
+  }, [user, profile]);
 
   const { data: myListings, isLoading: loadingListings } = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -95,11 +111,24 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 className="w-10 h-10 animate-spin text-primary" />
-    </div>
-  );
+  const handleUniversityChange = async (universityId: string) => {
+    if (!profile) return;
+    try {
+      await updateProfile({ university_id: universityId });
+      setUniversity(universities.find(uni => uni.id === universityId) || null);
+      toast({
+        title: "University updated",
+        description: "Your primary university has been updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating university:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update university. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -113,12 +142,12 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0B0E14] flex flex-col md:flex-row">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/50 backdrop-blur-xl h-screen sticky top-0">
+      <aside className="hidden md:flex w-64 flex-col bg-midnight border-r border-white/5 h-screen sticky top-0 text-white">
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2 mb-8">
             <span className="font-display text-xl font-bold">
               <span className="text-primary">mwanachuo</span>
-              <span className="text-foreground">shop</span>
+              <span className="text-white/40">shop</span>
             </span>
           </Link>
 
@@ -133,9 +162,9 @@ const Dashboard = () => {
               <button
                 key={nav.id}
                 onClick={() => setActiveTab(nav.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === nav.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-bold transition-all ${activeTab === nav.id
+                  ? "bg-primary text-white"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
               >
                 <nav.icon size={18} />
@@ -145,33 +174,123 @@ const Dashboard = () => {
           </nav>
         </div>
 
-        <div className="mt-auto p-6 border-t border-border">
+        <div className="mt-auto p-6 border-t border-white/5">
           <button
-            onClick={() => signOut()}
-            className="flex items-center gap-3 text-sm text-destructive font-medium hover:bg-destructive/10 w-full p-3 rounded-xl transition-all"
+            onClick={handleSignOut}
+            className="flex items-center gap-3 text-sm text-teal-400 font-bold hover:bg-white/5 w-full px-4 py-3 rounded-md transition-all"
           >
-            <Trash2 size={18} />
-            Logout
+            <ArrowLeft size={18} />
+            Sign Out
           </button>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <header className="md:hidden sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border p-4 flex items-center justify-between">
-        <Link to="/" className="font-display text-lg font-bold">
-          <span className="text-primary">mwanachuo</span>
-        </Link>
+      <header className="md:hidden sticky top-0 z-50 bg-midnight border-b border-white/5 p-4 flex items-center justify-between text-white">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 -ml-2 text-white/70 hover:text-white"
+          >
+            <Menu size={24} />
+          </button>
+          <Link to="/" className="font-display text-lg font-bold">
+            <span className="text-primary">mwanachuo</span>
+          </Link>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => setActiveTab("notifications")} className="relative">
+          <Button variant="ghost" size="icon" onClick={() => setSearchParams({ tab: "notifications" })} className="relative text-white/70 hover:text-white hover:bg-white/5">
             <Bell size={20} />
             {notifications?.some(n => !n.is_read) && <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />}
           </Button>
-          <Avatar className="w-8 h-8" onClick={() => setActiveTab("profile")}>
+          <Avatar className="w-8 h-8 rounded-md" onClick={() => setSearchParams({ tab: "profile" })}>
             <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback>{profile?.full_name?.substring(0, 2)}</AvatarFallback>
+            <AvatarFallback className="bg-primary text-white text-xs">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
           </Avatar>
         </div>
       </header>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-72 bg-midnight z-[101] shadow-2xl flex flex-col md:hidden text-white"
+            >
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <Link to="/" className="font-display text-xl font-bold">
+                  <span className="text-primary">mwanachuo</span>
+                  <span className="text-white/40">shop</span>
+                </Link>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 -mr-2 text-white/70 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <nav className="space-y-2">
+                  {[
+                    { id: "overview", label: "Overview", icon: LayoutDashboard },
+                    { id: "listings", label: "My Listings", icon: Package },
+                    { id: "wallet", label: "Wallet", icon: Wallet },
+                    { id: "notifications", label: "Notifications", icon: Bell },
+                    { id: "profile", label: "Profile Settings", icon: User },
+                  ].map((nav) => (
+                    <button
+                      key={nav.id}
+                      onClick={() => {
+                        setSearchParams({ tab: nav.id });
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-bold transition-all ${activeTab === nav.id
+                        ? "bg-primary text-white"
+                        : "text-white/60 hover:bg-white/5 hover:text-white"
+                        }`}
+                    >
+                      <nav.icon size={18} />
+                      {nav.label}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+
+              <div className="mt-auto p-6 border-t border-white/5">
+                <div className="flex items-center gap-3 mb-6 p-2">
+                  <Avatar className="w-10 h-10 rounded-md">
+                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarFallback className="bg-primary text-white">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  <div className="overflow-hidden">
+                    <p className="text-sm font-bold truncate">{profile?.full_name}</p>
+                    <p className="text-[10px] text-white/40 truncate uppercase tracking-widest">{profile?.user_type}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm font-bold text-teal-400 hover:bg-white/5 transition-all mt-auto"
+                >
+                  <ArrowLeft size={18} />
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 lg:p-12">
@@ -182,7 +301,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground mt-1 text-sm md:text-base">Here's what's happening with your account today.</p>
             </div>
             <Link to="/create-listing">
-              <Button className="rounded-xl px-6 h-12 gap-2">
+              <Button className="rounded-md px-6 h-12 gap-2">
                 <Plus size={18} />
                 Add New Listing
               </Button>
@@ -194,7 +313,7 @@ const Dashboard = () => {
             {stats.map((stat, i) => (
               <Card key={i} className="border-none transition-all">
                 <CardContent className="p-6">
-                  <div className={`p-2 w-10 h-10 rounded-xl bg-card border border-border mb-4 flex items-center justify-center ${stat.color}`}>
+                  <div className={`p-2 w-10 h-10 rounded-md bg-card border border-border mb-4 flex items-center justify-center ${stat.color}`}>
                     <stat.icon size={20} />
                   </div>
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{stat.label}</p>
@@ -222,7 +341,7 @@ const Dashboard = () => {
                       <div className="grid gap-4">
                         {[...(myListings?.products || []), ...(myListings?.services || [])].slice(0, 3).map((item: any) => (
                           <div key={item.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-md transition-all group">
-                            <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden shrink-0">
+                            <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0">
                               {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
                             </div>
                             <div className="flex-1">
@@ -256,7 +375,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent className="relative z-10">
                       <p className="text-[10px] opacity-70 mb-4 font-mono">**** **** **** {user?.id?.slice(-4)}</p>
-                      <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-xl font-bold" onClick={() => setActiveTab("wallet")}>
+                      <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-md font-bold" onClick={() => setActiveTab("wallet")}>
                         Manage Funds
                       </Button>
                     </CardContent>
@@ -303,7 +422,7 @@ const Dashboard = () => {
                             <p className="text-sm font-bold mt-1">Paybill: 400700</p>
                             <p className="text-xs text-muted-foreground">Acc: {profile?.phone_number || 'Your Phone Number'}</p>
                           </div>
-                          <Button size="sm" variant="outline" className="rounded-lg">Copy</Button>
+                          <Button size="sm" variant="outline" className="rounded-sm">Copy</Button>
                         </div>
                         <p className="text-[10px] text-muted-foreground italic">Funds will appear automatically within 5 minutes of payment.</p>
                       </CardContent>
@@ -316,7 +435,7 @@ const Dashboard = () => {
                       {wallet?.transactions?.map((tx: any) => (
                         <div key={tx.id} className="flex items-center justify-between p-4 bg-card rounded-md border border-border">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-teal-500/10 text-teal-500'}`}>
+                            <div className={`p-2 rounded-sm ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-teal-500/10 text-teal-500'}`}>
                               {tx.type === 'deposit' ? <TrendingUp size={16} /> : <History size={16} />}
                             </div>
                             <div>
@@ -342,30 +461,38 @@ const Dashboard = () => {
                   <Badge variant="outline" className="text-xs uppercase px-3">{myListings?.total} total</Badge>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...(myListings?.products || []), ...(myListings?.services || []), ...(myListings?.accommodations || [])].map((item: any) => (
-                    <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/50 transition-all">
-                      <div className="aspect-video relative overflow-hidden bg-muted">
-                        {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none">
-                            {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-teal-500" />}
-                            {item.is_active ? 'Visible' : 'Inactive'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-sm font-bold line-clamp-1">{item.title || item.name}</CardTitle>
-                          <p className="text-xs font-bold text-primary">TSh {item.price?.toLocaleString()}</p>
-                        </div>
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest pt-1">{item.category || item.type || 'Listing'}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0 flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 rounded-lg h-8 text-[10px]">Edit</Button>
-                        <Button variant="outline" size="sm" className="rounded-lg h-8 px-2 text-destructive"><Trash2 size={12} /></Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {[...(myListings?.products || []), ...(myListings?.services || []), ...(myListings?.accommodations || [])].map((item: any) => {
+                    const detailLink = item.seller_id ? `/product/${item.id}` :
+                      item.provider_id ? `/service/${item.id}` :
+                        `/accommodation/${item.id}`;
+
+                    return (
+                      <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/50 transition-all">
+                        <Link to={detailLink}>
+                          <div className="aspect-video relative overflow-hidden bg-muted">
+                            {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
+                            <div className="absolute top-2 right-2">
+                              <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none">
+                                {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-teal-500" />}
+                                {item.is_active ? 'Visible' : 'Inactive'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <CardHeader className="p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-sm font-bold line-clamp-1">{item.title || item.name}</CardTitle>
+                              <p className="text-xs font-bold text-primary">TSh {item.price?.toLocaleString()}</p>
+                            </div>
+                            <CardDescription className="text-[10px] uppercase font-bold tracking-widest pt-1">{item.category || item.type || 'Listing'}</CardDescription>
+                          </CardHeader>
+                        </Link>
+                        <CardContent className="p-4 pt-0 flex gap-2">
+                          <Button variant="outline" size="sm" className="flex-1 rounded-sm h-8 text-[10px]">Edit</Button>
+                          <Button variant="outline" size="sm" className="rounded-sm h-8 px-2 text-destructive"><Trash2 size={12} /></Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
@@ -378,7 +505,7 @@ const Dashboard = () => {
                 </div>
                 {notifications?.map((notif: any) => (
                   <div key={notif.id} className={`p-4 rounded-md border transition-all flex gap-4 ${notif.is_read ? 'bg-card border-border' : 'bg-primary/5 border-primary/20'}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${notif.is_read ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}`}>
+                    <div className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${notif.is_read ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}`}>
                       <Bell size={18} />
                     </div>
                     <div className="flex-1">
@@ -414,7 +541,7 @@ const Dashboard = () => {
                           <AvatarImage src={profile?.avatar_url} />
                           <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <button className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-primary-foreground"><Camera size={14} /></button>
+                        <button className="absolute bottom-0 right-0 p-2 rounded-sm bg-primary text-primary-foreground"><Camera size={14} /></button>
                       </div>
                       <div className="flex-1 pb-1">
                         <h3 className="text-xl font-bold">{profile?.full_name}</h3>
@@ -426,22 +553,38 @@ const Dashboard = () => {
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name</label>
-                          <Input defaultValue={profile?.full_name} className="rounded-xl h-11" />
+                          <Input defaultValue={profile?.full_name} className="rounded-md h-11" />
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number</label>
-                          <Input defaultValue={profile?.phone_number} className="rounded-xl h-11" />
+                          <Input defaultValue={profile?.phone_number} className="rounded-md h-11" />
                         </div>
                       </div>
                       <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">University</label>
+                        <select
+                          value={selectedUniversity?.id || ""}
+                          onChange={(e) => {
+                            const uni = universities.find(u => u.id === e.target.value);
+                            if (uni) setUniversity(uni);
+                          }}
+                          className="w-full px-3 py-2 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 h-11 appearance-none"
+                        >
+                          <option value="">Select University</option>
+                          {universities.map((uni) => (
+                            <option key={uni.id} value={uni.id}>{uni.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</label>
-                        <Input defaultValue={user?.email} disabled className="rounded-xl h-11 opacity-50" />
+                        <Input defaultValue={user?.email} disabled className="rounded-md h-11 opacity-50" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Biography</label>
-                        <Input defaultValue={profile?.bio} placeholder="Tell others about yourself..." className="rounded-xl h-11" />
+                        <Input defaultValue={profile?.bio} placeholder="Tell others about yourself..." className="rounded-md h-11" />
                       </div>
-                      <Button className="w-full rounded-xl h-12 font-bold mt-4">Save Profile Changes</Button>
+                      <Button className="w-full rounded-md h-12 font-bold mt-4">Save Profile Changes</Button>
                     </form>
                   </CardContent>
                 </Card>

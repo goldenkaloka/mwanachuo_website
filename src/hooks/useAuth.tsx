@@ -9,6 +9,7 @@ type AuthContextType = {
     loading: boolean;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
+    updateProfile: (updates: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
     signOut: async () => { },
     refreshProfile: async () => { },
+    updateProfile: async () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -80,11 +82,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
 
-        initAuth();
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log('Auth state change event:', _event);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth state change event:', event);
 
             if (isMounted) {
                 setSession(session);
@@ -93,17 +92,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (session?.user) {
                 const p = await fetchProfile(session.user.id);
-                if (isMounted) {
-                    setProfile(p);
-                    setLoading(false);
-                }
+                if (isMounted) setProfile(p);
             } else {
-                if (isMounted) {
-                    setProfile(null);
-                    setLoading(false);
-                }
+                if (isMounted) setProfile(null);
+            }
+
+            // After any session change event, we ensure loading is false
+            // But we only set it false once the initAuth has a chance to run or if the event is definitive
+            if (isMounted && event !== 'INITIAL_SESSION') {
+                setLoading(false);
             }
         });
+
+        initAuth();
 
         return () => {
             isMounted = false;
@@ -112,11 +113,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const signOut = async () => {
+        // Clear local state first to prevent race conditions in listeners
+        localStorage.removeItem('selected_university_id');
+
         await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+    };
+
+    const updateProfile = async (updates: any) => {
+        if (!user) return;
+        const { error } = await supabase
+            .from('users')
+            .update(updates)
+            .eq('id', user.id);
+
+        if (error) throw error;
+        await refreshProfile();
     };
 
     return (
-        <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+        <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

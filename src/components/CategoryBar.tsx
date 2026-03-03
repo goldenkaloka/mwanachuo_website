@@ -1,19 +1,16 @@
-import { Smartphone, Shirt, Home, Wrench, ShoppingBasket, Heart, Dumbbell, Car } from "lucide-react";
+import { Smartphone, Shirt, Home, Wrench, ShoppingBasket, Heart, Dumbbell, Car, Bed } from "lucide-react";
 import { motion } from "framer-motion";
 
 const categories = [
-  { name: "Electronics", icon: Smartphone, color: "bg-primary/10 text-primary" },
-  { name: "Fashion", icon: Shirt, color: "bg-accent/10 text-accent" },
-  { name: "Home", icon: Home, color: "bg-brand-green/10 text-brand-green" },
-  { name: "Services", icon: Wrench, color: "bg-brand-gold/10 text-brand-gold" },
-  { id: "electronics", label: "Electronics", name: "Electronics", icon: Smartphone, color: "bg-primary/10 text-primary" },
-  { id: "fashion", label: "Fashion", name: "Fashion", icon: Shirt, color: "bg-accent/10 text-accent" },
-  { id: "home", label: "Home", name: "Home", icon: Home, color: "bg-brand-green/10 text-brand-green" },
-  { id: "services", label: "Services", name: "Services", icon: Wrench, color: "bg-brand-gold/10 text-brand-gold" },
-  { id: "groceries", label: "Groceries", name: "Groceries", icon: ShoppingBasket, color: "bg-primary/10 text-primary" },
-  { id: "health", label: "Health", name: "Health", icon: Heart, color: "bg-accent/10 text-accent" },
-  { id: "sports", label: "Sports", name: "Sports", icon: Dumbbell, color: "bg-brand-green/10 text-brand-green" },
-  { id: "auto", label: "Auto", name: "Auto", icon: Car, color: "bg-brand-gold/10 text-brand-gold" },
+  { id: "electronics", label: "Electronics", icon: Smartphone, color: "bg-primary/10 text-primary" },
+  { id: "fashion", label: "Fashion", icon: Shirt, color: "bg-accent/10 text-accent" },
+  { id: "home", label: "Home", icon: Home, color: "bg-brand-green/10 text-brand-green" },
+  { id: "accommodations", label: "Accommodations", icon: Bed, color: "bg-primary/10 text-primary" },
+  { id: "services", label: "Services", icon: Wrench, color: "bg-brand-gold/10 text-brand-gold" },
+  { id: "groceries", label: "Groceries", icon: ShoppingBasket, color: "bg-primary/10 text-primary" },
+  { id: "health", label: "Health", icon: Heart, color: "bg-accent/10 text-accent" },
+  { id: "sports", label: "Sports", icon: Dumbbell, color: "bg-brand-green/10 text-brand-green" },
+  { id: "auto", label: "Auto", icon: Car, color: "bg-brand-gold/10 text-brand-gold" },
 ];
 
 interface CategoryBarProps {

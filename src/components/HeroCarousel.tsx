@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,44 @@ interface Promotion {
   priority?: number;
   is_active?: boolean;
 }
+
+const VideoSlide = ({ src }: { src: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    let isPlaying = false;
+    if (videoRef.current) {
+      // Ensure it's muted before playing
+      videoRef.current.muted = true;
+      videoRef.current.play().then(() => {
+        isPlaying = true;
+      }).catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Video auto-play failed:", err);
+        }
+      });
+    }
+
+    return () => {
+      // Cleanup: pause if we were playing to prevent AbortError on unmount
+      if (videoRef.current && isPlaying) {
+        videoRef.current.pause();
+      }
+    };
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      className="w-full h-full object-cover"
+      muted
+      loop
+      playsInline
+      autoPlay
+    />
+  );
+};
 
 const fallbackPromotions: Promotion[] = [
   {
@@ -82,11 +120,11 @@ const HeroCarousel = () => {
   const next = () => setCurrent((c) => (c + 1) % activePromotions.length);
 
   if (isLoading) {
-    return <div className="w-full rounded-md aspect-[21/9] md:aspect-[3/1] bg-muted animate-pulse" />;
+    return <div className="w-full rounded-md aspect-[4/3] md:aspect-[3/1] bg-muted animate-pulse" />;
   }
 
   return (
-    <section className="relative w-full overflow-hidden rounded-md aspect-[21/9] md:aspect-[3/1]">
+    <section className="relative w-full overflow-hidden rounded-md aspect-[4/3] md:aspect-[3/1]">
       <AnimatePresence mode="wait">
         <motion.div
           key={activePromotions[current].id}
@@ -96,19 +134,23 @@ const HeroCarousel = () => {
           transition={{ duration: 0.5 }}
           className="absolute inset-0"
         >
-          <img
-            src={activePromotions[current].src}
-            alt={activePromotions[current].title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-transparent" />
+          {activePromotions[current].type === "video" ? (
+            <VideoSlide src={activePromotions[current].src} />
+          ) : (
+            <img
+              src={activePromotions[current].src}
+              alt={activePromotions[current].title}
+              className="w-full h-full object-cover"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 md:via-black/20 to-transparent" />
           <div className="absolute inset-0 flex items-center">
-            <div className="px-6 md:px-12 max-w-lg">
+            <div className="px-5 md:px-12 max-w-lg">
               <motion.h2
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="font-display text-3xl md:text-6xl font-black text-white mb-4 tracking-tighter leading-none"
+                className="font-display text-2xl md:text-6xl font-black text-white mb-2 md:mb-4 tracking-tighter leading-tight md:leading-none"
               >
                 {activePromotions[current].title}
               </motion.h2>
@@ -116,7 +158,7 @@ const HeroCarousel = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-white/60 text-base md:text-xl mb-8 font-medium leading-relaxed max-w-sm"
+                className="text-white/60 text-sm md:text-xl mb-6 md:mb-8 font-medium leading-relaxed max-w-xs md:max-w-sm"
               >
                 {activePromotions[current].subtitle}
               </motion.p>
@@ -124,7 +166,7 @@ const HeroCarousel = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="px-8 py-4 bg-primary text-white rounded-md font-black text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
+                className="px-6 py-3 md:px-8 md:py-4 bg-primary text-white rounded-md font-black text-[10px] md:text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95 transition-all"
               >
                 {activePromotions[current].cta}
               </motion.button>

@@ -20,7 +20,7 @@ const iconMap: Record<string, any> = {
 const ServicesSection = () => {
   const { selectedUniversity } = useUniversity();
 
-  const { data: services, isLoading } = useQuery({
+  const { data: services, isLoading, isError } = useQuery({
     queryKey: ["services", selectedUniversity?.id],
     queryFn: async () => {
       let query = supabase
@@ -49,6 +49,8 @@ const ServicesSection = () => {
     );
   }
 
+  if (isError) return null;
+
   if (!services || services.length === 0) {
     return null; // Don't show section if no services
   }
@@ -60,7 +62,7 @@ const ServicesSection = () => {
           <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Services near you</h2>
           <p className="text-sm text-muted-foreground mt-1">Professional services available in your area</p>
         </div>
-        <button className="text-sm font-semibold text-primary hover:underline">View all</button>
+        <Link to="/services" className="text-sm font-semibold text-primary hover:underline">View all</Link>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
