@@ -66,13 +66,19 @@ const Index = () => {
         <CategoryBar activeCategory={activeCategory} onSelect={setActiveCategory} />
 
         <div className="space-y-8">
-          <ProductGrid categoryFilter={activeCategory} searchFilter={searchQuery} />
+          {/* Show ProductGrid if not specifically viewing Accommodations or Services */}
+          {activeCategory !== "Accommodations" && activeCategory !== "Services" && (
+            <ProductGrid categoryFilter={activeCategory} searchFilter={searchQuery} />
+          )}
 
-          {!activeCategory && !searchQuery && (
-            <>
-              <AccommodationsSection />
-              <ServicesSection />
-            </>
+          {/* Show Accommodations if no category is selected OR if "Accommodations" is selected */}
+          {(!activeCategory || activeCategory === "Accommodations") && !searchQuery && (
+            <AccommodationsSection />
+          )}
+
+          {/* Show Services if no category is selected OR if "Services" is selected */}
+          {(!activeCategory || activeCategory === "Services") && !searchQuery && (
+            <ServicesSection />
           )}
         </div>
       </main>

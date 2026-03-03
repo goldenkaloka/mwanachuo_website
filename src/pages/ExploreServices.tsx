@@ -82,7 +82,7 @@ const ExploreServices = () => {
                 </div>
 
                 {/* Categories Bar */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide border-b border-border">
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar scrollbar-hide border-b border-border">
                     <button
                         onClick={() => {
                             const params = new URLSearchParams(searchParams);

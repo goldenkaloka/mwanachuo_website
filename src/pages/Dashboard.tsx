@@ -31,6 +31,20 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Profile Form State
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [bio, setBio] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setPhoneNumber(profile.phone_number || "");
+      setBio(profile.bio || "");
+    }
+  }, [profile]);
+
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab });
   };
@@ -111,22 +125,33 @@ const Dashboard = () => {
     }
   };
 
-  const handleUniversityChange = async (universityId: string) => {
-    if (!profile) return;
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsUpdating(true);
     try {
-      await updateProfile({ university_id: universityId });
-      setUniversity(universities.find(uni => uni.id === universityId) || null);
-      toast({
-        title: "University updated",
-        description: "Your primary university has been updated successfully.",
+      await updateProfile({
+        full_name: fullName,
+        phone_number: phoneNumber,
+        bio: bio,
+        primary_university_id: selectedUniversity?.id
       });
-    } catch (error) {
-      console.error("Error updating university:", error);
+
       toast({
-        title: "Error",
-        description: "Failed to update university. Please try again.",
+        title: "Profile updated",
+        description: "Your profile changes have been saved successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Update failed",
+        description: error.message || "Could not save profile changes.",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -549,15 +574,23 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <form className="space-y-4">
+                    <form onSubmit={handleProfileUpdate} className="space-y-4">
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name</label>
-                          <Input defaultValue={profile?.full_name} className="rounded-md h-11" />
+                          <Input
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            className="rounded-md h-11"
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number</label>
-                          <Input defaultValue={profile?.phone_number} className="rounded-md h-11" />
+                          <Input
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            className="rounded-md h-11"
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -578,13 +611,31 @@ const Dashboard = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</label>
-                        <Input defaultValue={user?.email} disabled className="rounded-md h-11 opacity-50" />
+                        <Input value={user?.email || ""} disabled className="rounded-md h-11 opacity-50" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Biography</label>
-                        <Input defaultValue={profile?.bio} placeholder="Tell others about yourself..." className="rounded-md h-11" />
+                        <Input
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="Tell others about yourself..."
+                          className="rounded-md h-11"
+                        />
                       </div>
-                      <Button className="w-full rounded-md h-12 font-bold mt-4">Save Profile Changes</Button>
+                      <Button
+                        type="submit"
+                        disabled={isUpdating}
+                        className="w-full rounded-md h-12 font-bold mt-4"
+                      >
+                        {isUpdating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Profile Changes"
+                        )}
+                      </Button>
                     </form>
                   </CardContent>
                 </Card>

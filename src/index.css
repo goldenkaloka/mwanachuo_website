@@ -137,3 +137,15 @@
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--brand-gold)) 100%);
   }
 }
+
+/* Global scrollbar hiding for specific utility classes */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar,
+.scrollbar-hide {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}

@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUniversity } from "@/hooks/useUniversity";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories, useConditions } from "@/hooks/useCategories";
 
 type ListingType = "product" | "service" | "accommodation";
 
@@ -30,6 +31,8 @@ const CreateListing = () => {
     const [step, setStep] = useState(1);
     const [type, setType] = useState<ListingType>("product");
     const [loading, setLoading] = useState(false);
+    const { data: dynamicCategories } = useCategories();
+    const { data: dynamicConditions } = useConditions();
 
     // Form State
     const [title, setTitle] = useState("");
@@ -40,7 +43,7 @@ const CreateListing = () => {
     const [uploading, setUploading] = useState(false);
 
     // Product specific
-    const [condition, setCondition] = useState("new");
+    const [condition, setCondition] = useState("New");
 
     // Service specific
     const [availability, setAvailability] = useState("");
@@ -279,18 +282,21 @@ const CreateListing = () => {
                                             >
                                                 <option value="">Select Category</option>
                                                 {type === "product" ? (
-                                                    <>
-                                                        <option value="electronics">Electronics</option>
-                                                        <option value="books">Books</option>
-                                                        <option value="fashion">Fashion</option>
-                                                        <option value="stationery">Stationery</option>
-                                                    </>
+                                                    dynamicCategories?.map(cat => (
+                                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                                    ))
                                                 ) : type === "service" ? (
                                                     <>
                                                         <option value="tutoring">Tutoring</option>
                                                         <option value="cleaning">Cleaning</option>
                                                         <option value="logistics">Logistics</option>
                                                         <option value="beauty">Beauty & Salon</option>
+                                                        <option value="technical">Technical</option>
+                                                        <option value="styling">Styling</option>
+                                                        <option value="laundry">Laundry</option>
+                                                        <option value="transport">Transport</option>
+                                                        <option value="design">Design</option>
+                                                        <option value="writing">Writing</option>
                                                     </>
                                                 ) : (
                                                     <>
@@ -302,6 +308,23 @@ const CreateListing = () => {
                                             </select>
                                         </div>
                                     </div>
+
+                                    {type === "product" && (
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold ml-1">Condition</label>
+                                            <select
+                                                required
+                                                value={condition}
+                                                onChange={(e) => setCondition(e.target.value)}
+                                                className="w-full px-4 py-3 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
+                                            >
+                                                <option value="">Select Condition</option>
+                                                {dynamicConditions?.map(cond => (
+                                                    <option key={cond.id} value={cond.name}>{cond.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold ml-1">Description</label>

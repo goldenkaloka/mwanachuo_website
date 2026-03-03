@@ -7,6 +7,7 @@ import { Search, Star, ShoppingCart, MapPin, Loader2, ArrowLeft, SlidersHorizont
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useCategories } from "@/hooks/useCategories";
 
 const formatPrice = (price: number) => {
     return `TSh ${price.toLocaleString()}`;
@@ -17,6 +18,7 @@ const ExploreProducts = () => {
     const { selectedUniversity } = useUniversity();
     const categoryFilter = searchParams.get("category");
     const searchQuery = searchParams.get("search");
+    const { data: dynamicCategories } = useCategories();
 
     const { data: products, isLoading } = useQuery({
         queryKey: ["explore-products", selectedUniversity?.id, categoryFilter, searchQuery],
@@ -87,7 +89,7 @@ const ExploreProducts = () => {
                 </div>
 
                 {/* Categories Bar */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar scrollbar-hide">
                     <button
                         onClick={() => {
                             const params = new URLSearchParams(searchParams);
@@ -99,18 +101,18 @@ const ExploreProducts = () => {
                     >
                         All Items
                     </button>
-                    {["Electronics", "Fashion", "Home", "Groceries", "Books", "Sports", "Health"].map((cat) => (
+                    {dynamicCategories?.map((cat) => (
                         <button
-                            key={cat}
+                            key={cat.id}
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams);
-                                params.set("category", cat);
+                                params.set("category", cat.name);
                                 setSearchParams(params);
                             }}
-                            className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${categoryFilter === cat ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            className={`px-4 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${categoryFilter === cat.name ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                 }`}
                         >
-                            {cat}
+                            {cat.name}
                         </button>
                     ))}
                 </div>

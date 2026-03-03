@@ -5,6 +5,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUniversity } from "@/hooks/useUniversity";
 import { useAuth } from "@/hooks/useAuth";
 
+import { useCategories } from "@/hooks/useCategories";
+
 interface NavbarProps {
   searchQuery?: string;
   onSearch?: (query: string) => void;
@@ -15,11 +17,21 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
   const { selectedUniversity } = useUniversity();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: dynamicCategories } = useCategories();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
+
+  // Define static/special categories
+  const specialCategories = ["Accommodations", "Services"];
+
+  // Combine for navigation, showing special ones first
+  const navItems = [
+    ...specialCategories,
+    ...(dynamicCategories?.map(c => c.name) || [])
+  ];
 
   return (
     <header className="sticky top-0 z-50 glass-premium text-white">
@@ -120,7 +132,7 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
             className="lg:hidden bg-card border-t border-border overflow-hidden"
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-3">
-              {["Electronics", "Fashion", "Accommodations", "Home", "Services", "Groceries"].map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item}
                   to={`/?category=${item}`}
@@ -137,8 +149,8 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
 
       {/* Category bar - desktop */}
       <nav className="hidden lg:block bg-black/40 backdrop-blur-sm border-t border-white/[0.03]">
-        <div className="container mx-auto px-4 flex items-center gap-8 h-12">
-          {["Electronics", "Fashion", "Accommodations", "Home", "Services", "Groceries", "Health", "Sports"].map((cat) => (
+        <div className="container mx-auto px-4 flex items-center gap-8 h-12 overflow-x-auto no-scrollbar scrollbar-hide">
+          {navItems.map((cat) => (
             <Link
               key={cat}
               to={`/?category=${cat}`}

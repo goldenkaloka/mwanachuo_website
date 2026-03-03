@@ -124,13 +124,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const updateProfile = async (updates: any) => {
         if (!user) return;
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('users')
             .update(updates)
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .select()
+            .single();
 
         if (error) throw error;
-        await refreshProfile();
+        if (data) setProfile(data);
     };
 
     return (

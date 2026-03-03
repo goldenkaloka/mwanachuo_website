@@ -5,6 +5,7 @@ import { UserPlus, Mail, Lock, Loader2, AlertCircle, User, GraduationCap, Briefc
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useUniversity } from "@/hooks/useUniversity";
+import { useCategories } from "@/hooks/useCategories";
 
 const Signup = () => {
     const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ const Signup = () => {
     const [courses, setCourses] = useState<any[]>([]);
     const [courseId, setCourseId] = useState("");
     const [loadingCourses, setLoadingCourses] = useState(false);
+    const { data: dynamicCategories } = useCategories();
 
     useEffect(() => {
         if (universityId) {
@@ -175,10 +177,9 @@ const Signup = () => {
                                         className="w-full px-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30 appearance-none"
                                     >
                                         <option value="">Select Category</option>
-                                        <option value="electronics">Electronics Store</option>
-                                        <option value="fashion">Fashion & Boutique</option>
-                                        <option value="stationery">Stationery & Printing</option>
-                                        <option value="food">Food & Snacks</option>
+                                        {dynamicCategories?.map(cat => (
+                                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                        ))}
                                         <option value="other">Other</option>
                                     </select>
                                 </div>

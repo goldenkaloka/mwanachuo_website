@@ -1,4 +1,4 @@
-import { Wrench, Truck, Paintbrush, Zap, Droplets, Shield, ArrowRight, Loader2, Scissors, GraduationCap, Car } from "lucide-react";
+import { Wrench, Truck, Paintbrush, Zap, Droplets, Shield, ArrowRight, Loader2, Scissors, GraduationCap, Car, Camera, Laptop, Music, Palette, Book } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,11 @@ const iconMap: Record<string, any> = {
   "salon": Scissors,
   "tutoring": GraduationCap,
   "transport": Car,
+  "photography": Camera,
+  "technical": Laptop,
+  "design": Palette,
+  "writing": Book,
+  "music": Music,
 };
 
 const ServicesSection = () => {
