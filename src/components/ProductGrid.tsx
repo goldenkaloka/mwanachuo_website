@@ -18,17 +18,24 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
       try {
         let query = supabase
           .from("products")
-          .select("*")
+          .select(`
+            *,
+            listing_universities!inner(university_id)
+          `)
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
         if (selectedUniversity) {
-          // Show university-specific products OR global products (empty university_ids)
-          query = query.or(`university_ids.cs.{${selectedUniversity.id}},university_ids.eq.{}`);
+          query = query.eq("listing_universities.university_id", selectedUniversity.id);
         }
 
         if (categoryFilter) {
-          query = query.ilike("category", `%${categoryFilter}%`);
+          // If categoryFilter looks like a UUID or if we want to support both
+          if (categoryFilter.length === 36) {
+            query = query.eq("category_id", categoryFilter);
+          } else {
+            query = query.ilike("category", `%${categoryFilter}%`);
+          }
         }
 
         if (searchFilter) {

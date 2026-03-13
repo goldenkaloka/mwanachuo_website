@@ -18,9 +18,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUniversity } from "@/hooks/useUniversity";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { formatDistanceToNow } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+function safeFormatDistance(dateInput: string | number | Date | null | undefined): string {
+  if (dateInput == null) return "Just now";
+  const d = new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return "Just now";
+  try {
+    return formatDistanceToNow(d) + " ago";
+  } catch {
+    return "Just now";
+  }
+}
+
+function safeFormatDate(dateInput: string | number | Date | null | undefined): string {
+  if (dateInput == null) return "—";
+  const d = new Date(dateInput);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString();
+}
 
 const Dashboard = () => {
   const { user, profile, signOut, updateProfile } = useAuth();
@@ -36,6 +54,10 @@ const Dashboard = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // AirPay Topup State
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -85,7 +107,7 @@ const Dashboard = () => {
     queryKey: ["wallet", user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("wallets").select("*").eq("user_id", user?.id).maybeSingle();
-      const { data: txs } = await supabase.from("wallet_transactions").select("*").eq("wallet_id", user?.id).order('created_at', { ascending: false }).limit(5);
+      const { data: txs } = await supabase.from("wallet_transactions").select("*").eq("wallet_id", data?.user_id).order('created_at', { ascending: false }).limit(5);
       return { ...data, transactions: txs || [] };
     },
     enabled: !!user?.id,
@@ -155,6 +177,50 @@ const Dashboard = () => {
     }
   };
 
+  const handleAirPayTopUp = async () => {
+    if (!user || !topUpAmount || isNaN(Number(topUpAmount))) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount to top up.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsTopUpLoading(true);
+    try {
+      const amount = Number(topUpAmount);
+      if (amount < 100) throw new Error("Minimum top up is TSh 100");
+
+      console.log("[Dashboard] Initializing AirPay payment for:", amount);
+
+      const { data, error } = await supabase.functions.invoke('airpay-payment', {
+        body: {
+          amount: amount,
+          user_id: user.id,
+          phone_number: phoneNumber || profile?.phone_number,
+          full_name: fullName || profile?.full_name,
+          email: user.email
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.payment_url) throw new Error("Failed to generate payment URL");
+
+      // Redirect to AirPay checkout
+      window.location.href = data.payment_url;
+    } catch (error: any) {
+      console.error("[Dashboard] AirPay topup error:", error);
+      toast({
+        title: "Payment Error",
+        description: error.message || "Failed to initialize payment. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTopUpLoading(false);
+    }
+  };
+
   if (!user) return <Navigate to="/login" replace />;
 
   const stats = [
@@ -216,6 +282,7 @@ const Dashboard = () => {
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 -ml-2 text-white/70 hover:text-white"
+            aria-label="Open menu"
           >
             <Menu size={24} />
           </button>
@@ -261,6 +328,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 -mr-2 text-white/70 hover:text-white"
+                  aria-label="Close menu"
                 >
                   <X size={20} />
                 </button>
@@ -367,7 +435,7 @@ const Dashboard = () => {
                         {[...(myListings?.products || []), ...(myListings?.services || [])].slice(0, 3).map((item: any) => (
                           <div key={item.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-md transition-all group">
                             <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0">
-                              {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
+                              {item.images?.[0] ? <img src={item.images[0]} alt={item.title ? `${item.title} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
                             </div>
                             <div className="flex-1">
                               <h4 className="font-bold text-sm">{item.title}</h4>
@@ -377,7 +445,7 @@ const Dashboard = () => {
                             <div className="text-right">
                               <p className="font-bold text-sm">TSh {item.price?.toLocaleString() || 0}</p>
                               <p className="text-[10px] text-muted-foreground">
-                                {item.created_at ? formatDistanceToNow(new Date(item.created_at)) + " ago" : "Just now"}
+                                {safeFormatDistance(item.created_at)}
                               </p>
                             </div>
                           </div>
@@ -438,18 +506,28 @@ const Dashboard = () => {
                     <Card className="bg-card border border-border">
                       <CardHeader>
                         <CardTitle className="text-sm">Quick Top Up</CardTitle>
-                        <CardDescription>Add funds to your account via mobile money</CardDescription>
+                        <CardDescription>Add funds securely via AirPay (Mobile Money / Cards)</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="p-4 bg-muted/50 rounded-md border border-dashed flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-bold uppercase text-primary">M-Pesa / Tigo Pesa</p>
-                            <p className="text-sm font-bold mt-1">Paybill: 400700</p>
-                            <p className="text-xs text-muted-foreground">Acc: {profile?.phone_number || 'Your Phone Number'}</p>
-                          </div>
-                          <Button size="sm" variant="outline" className="rounded-sm">Copy</Button>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Amount (TSh)</label>
+                          <Input
+                            type="number"
+                            placeholder="Enter amount, e.g. 5000"
+                            value={topUpAmount}
+                            onChange={(e) => setTopUpAmount(e.target.value)}
+                            className="h-11 rounded-md"
+                          />
                         </div>
-                        <p className="text-[10px] text-muted-foreground italic">Funds will appear automatically within 5 minutes of payment.</p>
+                        <Button
+                          className="w-full h-11 rounded-md font-bold"
+                          onClick={handleAirPayTopUp}
+                          disabled={isTopUpLoading || !topUpAmount}
+                        >
+                          {isTopUpLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                          {isTopUpLoading ? "Initializing..." : "Top Up Now"}
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground italic text-center">Powered by AirPay Tanzania</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -465,7 +543,7 @@ const Dashboard = () => {
                             </div>
                             <div>
                               <p className="text-xs font-bold capitalize">{tx.description || tx.type}</p>
-                              <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</p>
+                              <p className="text-[10px] text-muted-foreground">{safeFormatDate(tx.created_at)}</p>
                             </div>
                           </div>
                           <p className={`text-xs font-bold ${tx.type === 'deposit' ? 'text-green-500' : 'text-teal-500'}`}>
@@ -495,7 +573,7 @@ const Dashboard = () => {
                       <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/50 transition-all">
                         <Link to={detailLink}>
                           <div className="aspect-video relative overflow-hidden bg-muted">
-                            {item.images?.[0] ? <img src={item.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
+                            {item.images?.[0] ? <img src={item.images[0]} alt={item.title || item.name ? `${item.title || item.name} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
                             <div className="absolute top-2 right-2">
                               <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none">
                                 {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-teal-500" />}
@@ -536,14 +614,14 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <h4 className="text-sm font-bold">{notif.title}</h4>
-                        <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(notif.created_at))} ago</p>
+                        <p className="text-[10px] text-muted-foreground">{safeFormatDistance(notif.created_at)}</p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{notif.message}</p>
                       {!notif.is_read && (
                         <button onClick={() => markAsRead(notif.id)} className="text-[10px] text-primary font-bold mt-2 hover:underline">Mark as read</button>
                       )}
                     </div>
-                    <button onClick={() => deleteNotification(notif.id)} className="text-muted-foreground hover:text-destructive self-start p-1"><Trash2 size={14} /></button>
+                    <button onClick={() => deleteNotification(notif.id)} className="text-muted-foreground hover:text-destructive self-start p-1" aria-label="Delete notification"><Trash2 size={14} /></button>
                   </div>
                 ))}
                 {(!notifications || notifications.length === 0) && (
@@ -566,7 +644,7 @@ const Dashboard = () => {
                           <AvatarImage src={profile?.avatar_url} />
                           <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <button className="absolute bottom-0 right-0 p-2 rounded-sm bg-primary text-primary-foreground"><Camera size={14} /></button>
+                        <button type="button" className="absolute bottom-0 right-0 p-2 rounded-sm bg-primary text-primary-foreground" aria-label="Change profile photo"><Camera size={14} /></button>
                       </div>
                       <div className="flex-1 pb-1">
                         <h3 className="text-xl font-bold">{profile?.full_name}</h3>
@@ -594,8 +672,9 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">University</label>
+                        <label htmlFor="dashboard-university" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">University</label>
                         <select
+                          id="dashboard-university"
                           value={selectedUniversity?.id || ""}
                           onChange={(e) => {
                             const uni = universities.find(u => u.id === e.target.value);

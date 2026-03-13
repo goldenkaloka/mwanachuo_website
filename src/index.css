@@ -147,5 +147,20 @@
 .no-scrollbar,
 .scrollbar-hide {
   -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+}
+
+@supports (scrollbar-width: none) {
+  .no-scrollbar,
+  .scrollbar-hide {
+    scrollbar-width: none !important;
+  }
+}
+
+/* Sidebar layout variables (replaces inline styles for webhint no-inline-styles) */
+.sidebar-provider {
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+}
+.sidebar-sheet-mobile {
+  --sidebar-width: 18rem;
 }

@@ -66,7 +66,7 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
               <input
                 type="text"
                 placeholder="Search products, services..."
-                value={searchQuery}
+                value={searchQuery ?? ""}
                 onChange={(e) => onSearch?.(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-white/30 focus:outline-none focus:bg-white/[0.07] focus:ring-1 focus:ring-white/20 transition-all"
               />
