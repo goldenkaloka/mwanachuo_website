@@ -55,14 +55,9 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
 
   // 2. Initial selection & Sync (runs after universities are loaded)
   useEffect(() => {
-    if (loading) return;
+    if (loading || universities.length === 0) return;
 
     const syncUniversity = () => {
-      if (universities.length === 0) {
-        setIsInitialized(true);
-        return;
-      }
-
       // Priority 1: User Profile (Database)
       if (user && profile?.primary_university_id) {
         const profileUni = universities.find(u => u.id === profile.primary_university_id);
@@ -79,11 +74,13 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
 
       // Priority 2: Local Storage (Guest or persistent choice)
       const savedId = localStorage.getItem("selected_university_id");
-      if (savedId && !selectedUniversity) {
+      if (savedId) {
         const savedUni = universities.find(u => u.id === savedId);
         if (savedUni) {
-          console.log("[useUniversity] Loading from localStorage:", savedUni.name);
-          setSelectedUniversity(savedUni);
+          if (selectedUniversity?.id !== savedUni.id) {
+            console.log("[useUniversity] Loading from localStorage:", savedUni.name);
+            setSelectedUniversity(savedUni);
+          }
         }
       }
 
@@ -91,7 +88,7 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
     };
 
     syncUniversity();
-  }, [loading, user, profile?.primary_university_id, universities, selectedUniversity?.id]);
+  }, [loading, user, profile?.primary_university_id, universities]);
 
   // 3. Cleanup on Logout
   useEffect(() => {

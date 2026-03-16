@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 
 const formatPrice = (price: number) => {
     return `TSh ${price.toLocaleString()}`;
@@ -11,26 +13,43 @@ const formatPrice = (price: number) => {
 
 const AccommodationsSection = () => {
     const { selectedUniversity } = useUniversity();
+    const { user } = useAuth();
 
     const { data: accommodations, isLoading, isError } = useQuery({
-        queryKey: ["accommodations", selectedUniversity?.id],
-        queryFn: async () => {
-            let query = supabase
-                .from("accommodations")
-                .select("*")
-                .eq("is_active", true)
-                .order("created_at", { ascending: false });
+        queryKey: ["accommodations", selectedUniversity?.id, !!user],
+    queryFn: async () => {
+      let query = supabase
+        .from("accommodations")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-            if (selectedUniversity) {
-                // Show university-specific accommodations OR global ones
-                query = query.or(`university_ids.cs.{${selectedUniversity.id}},university_ids.eq.{}`);
-            }
+      if (user && selectedUniversity) {
+        query = query.or(`metadata->is_global.eq.true,university_ids.cs.{${selectedUniversity.id}}`);
+      }
 
-            const { data, error } = await query.limit(4);
+      const { data, error } = await query.limit(10); // Candidate pool
 
-            if (error) throw error;
-            return data || [];
-        },
+      if (error) throw error;
+      if (!data) return [];
+
+      // --- Marketplace Fairness Algorithm ---
+      const now = new Date();
+      return data
+        .map(item => {
+          let score = Math.random() * 5; // Low jitter for hostels (stability is better)
+          // Accommodations don't have is_featured yet, but they have ratings
+          if (item.rating >= 4.5) score += 20;
+          
+          const hoursOld = (now.getTime() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+          if (hoursOld < 336) { // 2 week boost for hostels (long listing lifecycle)
+            score += Math.max(0, 30 * (1 - hoursOld / 336));
+          }
+          return { ...item, _score: score };
+        })
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 4);
+    },
     });
 
     if (isLoading) {
@@ -52,7 +71,7 @@ const AccommodationsSection = () => {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Find a place to stay</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Hostels and rooms near {selectedUniversity?.name || "campus"}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Hostels and rooms {user && selectedUniversity ? `near ${selectedUniversity.name}` : "anywhere"}</p>
                 </div>
                 <Link to="/accommodations" className="text-sm font-semibold text-primary hover:underline">See all</Link>
             </div>
@@ -69,9 +88,10 @@ const AccommodationsSection = () => {
                         <div className="w-full sm:w-48 h-48 shrink-0 bg-muted relative">
                             {acc.images && acc.images.length > 0 ? (
                                 <img
-                                    src={acc.images[0]}
+                                    src={getOptimizedImageUrl(acc.images[0], { width: 400, height: 400, quality: 75 })}
                                     alt={acc.name}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    loading="lazy"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 import heroPromo1 from "@/assets/hero-promo-1.jpg";
 import heroPromo2 from "@/assets/hero-promo-2.jpg";
 
@@ -138,7 +139,7 @@ const HeroCarousel = () => {
             <VideoSlide src={activePromotions[current].src} />
           ) : (
             <img
-              src={activePromotions[current].src}
+              src={getOptimizedImageUrl(activePromotions[current].src, { width: 1200, height: 400, quality: 80 })}
               alt={activePromotions[current].title}
               className="w-full h-full object-cover"
             />

@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
 import { Search, Star, ShoppingCart, MapPin, Loader2, ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { useCategories } from "@/hooks/useCategories";
+import { ProductExploreSkeleton } from "@/components/ExploreSkeletons";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -16,28 +18,36 @@ const formatPrice = (price: number) => {
 const ExploreProducts = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectedUniversity } = useUniversity();
+  const { user } = useAuth();
   const categoryFilter = searchParams.get("category");
   const searchQuery = searchParams.get("search");
   const { data: dynamicCategories } = useCategories();
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["explore-products", selectedUniversity?.id, categoryFilter, searchQuery],
-    queryFn: async () => {
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading 
+  } = useInfiniteQuery({
+    queryKey: ["explore-products", selectedUniversity?.id, categoryFilter, searchQuery, !!user],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      const pageSize = 15;
       let query = supabase
         .from("products")
         .select(`
-          *,
-          listing_universities!inner(university_id)
+          id, title, price, images, rating, review_count, location, is_featured, created_at, category, metadata
         `)
         .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(pageParam * pageSize, (pageParam + 1) * pageSize - 1);
 
-      if (selectedUniversity) {
-        query = query.eq("listing_universities.university_id", selectedUniversity.id);
+      if (user && selectedUniversity) {
+        query = query.or(`metadata->is_global.eq.true,university_ids.cs.{${selectedUniversity.id}}`);
       }
 
       if (categoryFilter) {
-        // Handle both name and ID for backward compatibility
         if (categoryFilter.length === 36) {
           query = query.eq("category_id", categoryFilter);
         } else {
@@ -51,9 +61,26 @@ const ExploreProducts = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Apply Marketplace Fairness Algorithm to the fetched chunk
+      const now = new Date();
+      const scoredData = (data || []).map(item => {
+        let score = 0;
+        if (item.is_featured) score += 100;
+        const hoursOld = (now.getTime() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+        if (hoursOld < 72) score += Math.max(0, 50 * (1 - hoursOld / 72));
+        score += Math.random() * 15; // Jitter for variety
+        return { ...item, _fairness_score: score };
+      });
+
+      return scoredData.sort((a, b) => b._fairness_score - a._fairness_score);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 15 ? allPages.length : undefined;
     },
   });
+
+  const products = data?.pages.flat() || [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -70,7 +97,7 @@ const ExploreProducts = () => {
               Explore Products
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {products?.length || 0} items available {selectedUniversity ? `near ${selectedUniversity.name}` : "globally"}
+              {products?.length || 0} items available {user && selectedUniversity ? `near ${selectedUniversity.name}` : "globally"}
             </p>
           </div>
 
@@ -125,67 +152,87 @@ const ExploreProducts = () => {
           ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground font-medium">Loading amazing products...</p>
-          </div>
+        {isLoading && products.length === 0 ? (
+          <ProductExploreSkeleton />
         ) : products && products.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {products.map((product, i) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.02 }}
-                className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
-              >
-                <Link to={`/product/${product.id}`}>
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs italic">
-                        No image available
-                      </div>
-                    )}
-                    {product.is_featured && (
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-[0.1em] bg-primary text-primary-foreground">
-                        Featured
-                      </span>
-                    )}
-                    <button className="absolute bottom-2 right-2 p-2 rounded-xl bg-card/90 backdrop-blur-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground shadow-sm">
-                      <ShoppingCart size={16} />
-                    </button>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-bold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">{product.title}</h3>
-                    <div className="flex items-center gap-1 mb-2">
-                      <Star size={10} className="fill-brand-gold text-brand-gold" />
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        {product.rating || "5.0"} • {product.review_count || 0} Reviews
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-auto">
-                      <span className="font-display font-black text-primary text-lg leading-none">
-                        {formatPrice(Number(product.price))}
-                      </span>
-                      {product.location && (
-                        <span className="text-[9px] font-bold text-muted-foreground flex items-center gap-0.5 uppercase tracking-tighter">
-                          <MapPin size={10} className="text-primary" />
-                          {product.location}
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              {products.map((product, i) => (
+                <motion.div
+                  key={`${product.id}-${i}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: (i % 15) * 0.02 }}
+                  className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
+                >
+                  <Link to={`/product/${product.id}`}>
+                    <div className="relative aspect-square overflow-hidden bg-muted">
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={getOptimizedImageUrl(product.images[0], { width: 400, height: 400, quality: 75 })}
+                          alt={product.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-0 data-[loaded=true]:opacity-100 transition-opacity"
+                          onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs italic">
+                          No image available
+                        </div>
+                      )}
+                      {product.is_featured && (
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-[0.1em] bg-primary text-primary-foreground">
+                          Featured
                         </span>
                       )}
+                      <button className="absolute bottom-2 right-2 p-2 rounded-xl bg-card/90 backdrop-blur-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground shadow-sm">
+                        <ShoppingCart size={16} />
+                      </button>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                    <div className="p-3">
+                      <h3 className="text-sm font-bold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">{product.title}</h3>
+                      <div className="flex items-center gap-1 mb-2">
+                        <Star size={10} className="fill-brand-gold text-brand-gold" />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          {product.rating || "5.0"} • {product.review_count || 0} Reviews
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-auto">
+                        <span className="font-display font-black text-primary text-lg leading-none">
+                          {formatPrice(Number(product.price))}
+                        </span>
+                        {product.location && (
+                          <span className="text-[9px] font-bold text-muted-foreground flex items-center gap-0.5 uppercase tracking-tighter">
+                            <MapPin size={10} className="text-primary" />
+                            {product.location}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            {hasNextPage && (
+              <div className="mt-12 flex justify-center">
+                <button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="px-8 py-3 bg-secondary text-foreground rounded-md font-bold text-sm hover:bg-secondary/80 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    "Load More Items"
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-muted/30 rounded-3xl border border-dashed border-border">
             <h3 className="text-lg font-bold text-foreground">No matches found</h3>

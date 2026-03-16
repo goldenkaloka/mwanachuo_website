@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const iconMap: Record<string, any> = {
   "plumbing": Droplets,
@@ -24,9 +25,10 @@ const iconMap: Record<string, any> = {
 
 const ServicesSection = () => {
   const { selectedUniversity } = useUniversity();
+  const { user } = useAuth();
 
   const { data: services, isLoading, isError } = useQuery({
-    queryKey: ["services", selectedUniversity?.id],
+    queryKey: ["services", selectedUniversity?.id, !!user],
     queryFn: async () => {
       let query = supabase
         .from("services")
@@ -34,15 +36,30 @@ const ServicesSection = () => {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (selectedUniversity) {
-        // Show university-specific services OR global services
-        query = query.or(`university_ids.cs.{${selectedUniversity.id}},university_ids.eq.{}`);
+      if (user && selectedUniversity) {
+        query = query.or(`metadata->is_global.eq.true,university_ids.cs.{${selectedUniversity.id}}`);
       }
 
-      const { data, error } = await query.limit(6);
+      const { data, error } = await query.limit(15); // Larger candidate pool
 
       if (error) throw error;
-      return data || [];
+      if (!data) return [];
+
+      // --- Marketplace Fairness Algorithm ---
+      const now = new Date();
+      return data
+        .map(item => {
+          let score = Math.random() * 10; // Base jitter
+          if (item.is_featured) score += 100;
+          
+          const hoursOld = (now.getTime() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+          if (hoursOld < 168) { // 1 week boost for service providers
+            score += Math.max(0, 40 * (1 - hoursOld / 168));
+          }
+          return { ...item, _score: score };
+        })
+        .sort((a, b) => b._score - a._score)
+        .slice(0, 6);
     },
   });
 

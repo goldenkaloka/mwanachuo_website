@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 import {
   ArrowLeft,
   Loader2,
@@ -21,6 +22,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react"; // Added useState for activeImage
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -28,6 +30,7 @@ const formatPrice = (price: number) => {
 
 const AccommodationDetail = () => {
   const { id } = useParams();
+  const [activeImage, setActiveImage] = useState(0); // Added state for active image
 
   const { data: accommodation, isLoading, error } = useQuery({
     queryKey: ["accommodation", id],
@@ -131,14 +134,19 @@ const AccommodationDetail = () => {
         </Link>
 
         {/* Hero Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 h-[300px] md:h-[500px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="lg:col-span-2 rounded-3xl overflow-hidden bg-muted"
+            className="lg:col-span-2 rounded-3xl overflow-hidden bg-muted h-[300px] md:h-[500px]"
           >
-            {accommodation.images?.[0] ? (
-              <img src={accommodation.images[0]} alt={accommodation.name} className="w-full h-full object-cover" />
+            {accommodation.images?.[activeImage] ? (
+              <img
+                src={getOptimizedImageUrl(accommodation.images[activeImage], { width: 1000, quality: 85 })}
+                alt={accommodation.name}
+                loading="eager"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center"><Bed size={48} className="text-muted-foreground" /></div>
             )}
@@ -151,7 +159,7 @@ const AccommodationDetail = () => {
               className="rounded-3xl overflow-hidden bg-muted"
             >
               {accommodation.images?.[1] ? (
-                <img src={accommodation.images[1]} alt={accommodation.name} className="w-full h-full object-cover" />
+                <img src={getOptimizedImageUrl(accommodation.images[1], { width: 500, quality: 75 })} alt={accommodation.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/5">Room view</div>
               )}
@@ -160,16 +168,31 @@ const AccommodationDetail = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="rounded-md overflow-hidden bg-muted"
+              className="rounded-3xl overflow-hidden bg-muted"
             >
               {accommodation.images?.[2] ? (
-                <img src={accommodation.images[2]} alt={accommodation.name} className="w-full h-full object-cover" />
+                <img src={getOptimizedImageUrl(accommodation.images[2], { width: 500, quality: 75 })} alt={accommodation.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-secondary">Common Area</div>
               )}
             </motion.div>
           </div>
         </div>
+
+        {/* Image Thumbnails */}
+        {accommodation.images && accommodation.images.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-12">
+            {accommodation.images.map((img: string, index: number) => (
+              <button
+                key={index}
+                onClick={() => setActiveImage(index)}
+                className={`relative aspect-square w-24 h-24 rounded-md overflow-hidden bg-muted border-2 transition-all flex-shrink-0 ${activeImage === index ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+              >
+                <img src={getOptimizedImageUrl(img, { width: 150, height: 150, quality: 60 })} alt="Thumbnail" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Info */}

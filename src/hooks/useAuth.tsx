@@ -67,21 +67,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       try {
         // 1. Get initial session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
           console.error("Auth init error:", sessionError);
         }
 
         if (isMounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
         }
 
         // 2. Fetch profile if session exists
-        if (session?.user) {
-          const p = await fetchProfile(session.user.id);
-          if (isMounted) setProfile(p);
+        if (initialSession?.user) {
+          const profileData = await fetchProfile(initialSession.user.id);
+          if (isMounted) setProfile(profileData);
         }
       } catch (err) {
         console.error("Auth initialization caught exception:", err);

@@ -17,6 +17,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -214,7 +215,7 @@ const ServiceDetail = () => {
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-sm bg-muted overflow-hidden">
                       <img
-                        src={service.provider?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+                        src={getOptimizedImageUrl(service.provider?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop", { width: 100, height: 100, quality: 70 })}
                         alt={service.provider?.full_name}
                         className="w-full h-full object-cover"
                       />

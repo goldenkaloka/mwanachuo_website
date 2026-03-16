@@ -19,6 +19,7 @@ import { useUniversity } from "@/hooks/useUniversity";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import { useCategories, useConditions } from "@/hooks/useCategories";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 
 type ListingType = "product" | "service" | "accommodation";
 
@@ -356,7 +357,7 @@ const ListingForm = () => {
                     <div className="grid grid-cols-3 gap-4">
                       {images.map((img, i) => (
                         <div key={i} className="relative aspect-square rounded-2xl overflow-hidden bg-muted group">
-                          <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                          <img src={getOptimizedImageUrl(img, { width: 400, height: 400, quality: 75 })} alt="Preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeImage(i)}

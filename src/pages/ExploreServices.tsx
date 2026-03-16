@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
 import { Search, Star, MessageSquare, MapPin, Loader2, ArrowLeft, Clock, Wrench } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ServiceExploreSkeleton } from "@/components/ExploreSkeletons";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -15,20 +17,32 @@ const formatPrice = (price: number) => {
 const ExploreServices = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { selectedUniversity } = useUniversity();
+  const { user } = useAuth();
   const categoryFilter = searchParams.get("category");
   const searchQuery = searchParams.get("search");
 
-  const { data: services, isLoading } = useQuery({
-    queryKey: ["explore-services", selectedUniversity?.id, categoryFilter, searchQuery],
-    queryFn: async () => {
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading 
+  } = useInfiniteQuery({
+    queryKey: ["explore-services", selectedUniversity?.id, categoryFilter, searchQuery, !!user],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      const pageSize = 15;
       let query = supabase
         .from("services")
-        .select("*")
+        .select(`
+          id, title, description, price, price_type, category, rating, location, availability, is_active, created_at, is_featured
+        `)
         .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(pageParam * pageSize, (pageParam + 1) * pageSize - 1);
 
-      if (selectedUniversity) {
-        query = query.or(`university_ids.cs.{${selectedUniversity.id}},university_ids.eq.{}`);
+      if (user && selectedUniversity) {
+        query = query.or(`metadata->is_global.eq.true,university_ids.cs.{${selectedUniversity.id}}`);
       }
 
       if (categoryFilter) {
@@ -41,9 +55,26 @@ const ExploreServices = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Apply Marketplace Fairness Algorithm
+      const now = new Date();
+      const scoredData = (data || []).map(item => {
+        let score = 0;
+        if (item.is_featured) score += 100;
+        const hoursOld = (now.getTime() - new Date(item.created_at).getTime()) / (1000 * 60 * 60);
+        if (hoursOld < 168) score += Math.max(0, 40 * (1 - hoursOld / 168)); // 1 week boost for services
+        score += Math.random() * 10; // Jitter
+        return { ...item, _fairness_score: score };
+      });
+
+      return scoredData.sort((a, b) => b._fairness_score - a._fairness_score);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 15 ? allPages.length : undefined;
     },
   });
+
+  const services = data?.pages.flat() || [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -60,7 +91,7 @@ const ExploreServices = () => {
               Service Directory
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Find professional help {selectedUniversity ? `at ${selectedUniversity.name}` : "anywhere"}
+              Find professional help {user && selectedUniversity ? `at ${selectedUniversity.name}` : "anywhere"}
             </p>
           </div>
 
@@ -110,62 +141,80 @@ const ExploreServices = () => {
           ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground font-medium">Finding the best experts for you...</p>
-          </div>
+        {isLoading && services.length === 0 ? (
+          <ServiceExploreSkeleton />
         ) : services && services.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {services.map((service, i) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
-              >
-                <Link to={`/service/${service.id}`}>
-                  <div className="p-5 flex flex-col h-full">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-2.5 rounded-sm bg-primary/10 text-primary">
-                        <Wrench size={24} />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star size={12} className="fill-brand-gold text-brand-gold" />
-                        <span className="text-[10px] font-black">{service.rating || "5.0"}</span>
-                      </div>
-                    </div>
-
-                    <h3 className="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">{service.title}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-3 mb-4 leading-relaxed flex-grow">{service.description}</p>
-
-                    <div className="space-y-3 pt-4 border-t border-border mt-auto">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Rate</span>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-black text-primary">{formatPrice(Number(service.price))}</span>
-                          <span className="text-[9px] text-muted-foreground font-bold uppercase">/{service.price_type || "hr"}</span>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              {services.map((service, i) => (
+                <motion.div
+                  key={`${service.id}-${i}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (i % 15) * 0.03 }}
+                  className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
+                >
+                  <Link to={`/service/${service.id}`}>
+                    <div className="p-5 flex flex-col h-full">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="p-2.5 rounded-sm bg-primary/10 text-primary">
+                          <Wrench size={24} />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star size={12} className="fill-brand-gold text-brand-gold" />
+                          <span className="text-[10px] font-black">{service.rating || "5.0"}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
-                        <Clock size={12} className="text-primary" />
-                        <span>{service.availability?.[0] || "Flexible"}</span>
-                      </div>
+                      <h3 className="text-base font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">{service.title}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-3 mb-4 leading-relaxed flex-grow">{service.description}</p>
 
-                      {service.location && (
+                      <div className="space-y-3 pt-4 border-t border-border mt-auto">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Rate</span>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-black text-primary">{formatPrice(Number(service.price))}</span>
+                            <span className="text-[9px] text-muted-foreground font-bold uppercase">/{service.price_type || "hr"}</span>
+                          </div>
+                        </div>
+
                         <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
-                          <MapPin size={12} className="text-primary" />
-                          <span>{service.location}</span>
+                          <Clock size={12} className="text-primary" />
+                          <span>{service.availability?.[0] || "Flexible"}</span>
                         </div>
-                      )}
+
+                        {service.location && (
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                            <MapPin size={12} className="text-primary" />
+                            <span>{service.location}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            {hasNextPage && (
+              <div className="mt-12 flex justify-center">
+                <button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="px-8 py-3 bg-secondary text-foreground rounded-md font-bold text-sm hover:bg-secondary/80 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    "Load More Services"
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-muted/20 rounded-xl border border-dashed border-border">
             <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">

@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import { formatDistanceToNow } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 
 function safeFormatDistance(dateInput: string | number | Date | null | undefined): string {
   if (dateInput == null) return "Just now";
@@ -435,7 +436,7 @@ const Dashboard = () => {
                         {[...(myListings?.products || []), ...(myListings?.services || [])].slice(0, 3).map((item: any) => (
                           <div key={item.id} className="flex items-center gap-4 p-4 bg-card border border-border rounded-md transition-all group">
                             <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0">
-                              {item.images?.[0] ? <img src={item.images[0]} alt={item.title ? `${item.title} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
+                              {item.images?.[0] ? <img src={getOptimizedImageUrl(item.images[0], { width: 100, height: 100, quality: 70 })} alt={item.title ? `${item.title} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
                             </div>
                             <div className="flex-1">
                               <h4 className="font-bold text-sm">{item.title}</h4>
@@ -573,7 +574,7 @@ const Dashboard = () => {
                       <Card key={item.id} className="group overflow-hidden border-border hover:border-primary/50 transition-all">
                         <Link to={detailLink}>
                           <div className="aspect-video relative overflow-hidden bg-muted">
-                            {item.images?.[0] ? <img src={item.images[0]} alt={item.title || item.name ? `${item.title || item.name} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
+                            {item.images?.[0] ? <img src={getOptimizedImageUrl(item.images[0], { width: 400, height: 300, quality: 75 })} alt={item.title || item.name ? `${item.title || item.name} thumbnail` : "Listing thumbnail"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <Package className="w-full h-full p-8 text-muted-foreground opacity-50" />}
                             <div className="absolute top-2 right-2">
                               <Badge className="bg-white/90 text-foreground font-bold backdrop-blur-sm border-none">
                                 {item.is_active ? <CheckCircle2 size={12} className="mr-1 text-green-500" /> : <AlertCircle size={12} className="mr-1 text-teal-500" />}

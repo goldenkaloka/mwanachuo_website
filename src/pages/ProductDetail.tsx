@@ -1,6 +1,10 @@
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useUniversity } from "@/hooks/useUniversity";
+import { toast } from "sonner";
+import { getOptimizedImageUrl } from "@/utils/imageOptim";
 import {
   Star,
   ShoppingCart,
@@ -15,6 +19,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -22,6 +27,7 @@ const formatPrice = (price: number) => {
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const [activeImage, setActiveImage] = useState(0);
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["product", id],
@@ -80,6 +86,12 @@ const ProductDetail = () => {
     enabled: !!id,
   });
 
+  useEffect(() => {
+    if (product?.images?.length > 0) {
+      setActiveImage(0);
+    }
+  }, [product]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -123,22 +135,29 @@ const ProductDetail = () => {
             className="space-y-4"
           >
             <div className="aspect-square rounded-md overflow-hidden bg-muted border border-border">
-              {product.images?.[0] ? (
-                <img
-                  src={product.images[0]}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
+              {product.images && product.images.length > 0 ? (
+                <div className="w-full h-full flex items-center justify-center relative bg-black/5">
+                  <img
+                    src={getOptimizedImageUrl(product.images[activeImage], { width: 800, quality: 85 })}
+                    alt={`${product.title} - Image ${activeImage + 1}`}
+                    loading={activeImage === 0 ? "eager" : "lazy"}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image available</div>
               )}
             </div>
             {product.images?.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
-                {product.images.slice(1, 5).map((img: string, i: number) => (
-                  <div key={i} className="aspect-square rounded-sm overflow-hidden bg-muted border border-border cursor-pointer hover:border-primary transition-colors">
-                    <img src={img} alt={`${product.title} ${i + 2}`} className="w-full h-full object-cover" />
-                  </div>
+                {product.images.slice(0, 4).map((img: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveImage(index)}
+                      className={`relative aspect-square rounded-md overflow-hidden bg-muted border-2 transition-all ${activeImage === index ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+                    >
+                      <img src={getOptimizedImageUrl(img, { width: 100, height: 100, quality: 60 })} alt="Thumbnail" className="w-full h-full object-cover" />
+                    </button>
                 ))}
               </div>
             )}
