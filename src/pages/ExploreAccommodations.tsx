@@ -36,7 +36,7 @@ const ExploreAccommodations = () => {
       let query = supabase
         .from("accommodations")
         .select(`
-          id, name, description, price, location, room_type, bedrooms, images, is_active, created_at
+          id, name, description, price, location, room_type, bedrooms, images, is_active, created_at, rating
         `)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
