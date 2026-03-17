@@ -70,6 +70,7 @@ const Dashboard = () => {
   // AirPay Topup State
   const [topUpAmount, setTopUpAmount] = useState("");
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [airpayCheckoutData, setAirpayCheckoutData] = useState<any>(null);
 
   // Listing management state
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -213,6 +214,16 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    // Automatically submit the AirPay form when the data is set
+    if (airpayCheckoutData) {
+      const form = document.getElementById("airpay-checkout-form") as HTMLFormElement;
+      if (form) {
+        form.submit();
+      }
+    }
+  }, [airpayCheckoutData]);
+
   const handleAirPayTopUp = async () => {
     if (!user || !topUpAmount || isNaN(Number(topUpAmount))) {
       toast({
@@ -224,6 +235,8 @@ const Dashboard = () => {
     }
 
     setIsTopUpLoading(true);
+    setAirpayCheckoutData(null); // Reset previous data
+
     try {
       const amount = Number(topUpAmount);
       if (amount < 100) throw new Error("Minimum top up is TSh 100");
@@ -236,15 +249,23 @@ const Dashboard = () => {
           user_id: user.id,
           phone_number: phoneNumber || profile?.phone_number,
           full_name: fullName || profile?.full_name,
-          email: user.email
+          email: user.email,
+          metadata: {
+             address: profile?.address || 'Tanzania',
+             city: profile?.city || 'Dar es Salaam',
+             state: profile?.state || 'Dar es Salaam',
+             pincode: profile?.pincode || '11111',
+             country: profile?.country || 'TZ',
+          }
         }
       });
 
       if (error) throw error;
-      if (!data?.payment_url) throw new Error("Failed to generate payment URL");
+      if (!data?.checkout_url) throw new Error("Failed to generate payment URL");
 
-      // Redirect to AirPay checkout
-      window.location.href = data.payment_url;
+      // Set data to trigger the auto-submit form
+      setAirpayCheckoutData(data);
+
     } catch (error: any) {
       console.error("[Dashboard] AirPay topup error:", error);
       toast({
@@ -252,8 +273,7 @@ const Dashboard = () => {
         description: error.message || "Failed to initialize payment. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsTopUpLoading(false);
+      setIsTopUpLoading(false); // Only set to false on error, if success the page will redirect
     }
   };
 
@@ -565,6 +585,20 @@ const Dashboard = () => {
                           {isTopUpLoading ? "Initializing..." : "Top Up Now"}
                         </Button>
                         <p className="text-[10px] text-muted-foreground italic text-center">Powered by AirPay Tanzania</p>
+                        
+                        {airpayCheckoutData && (
+                           <form 
+                             id="airpay-checkout-form" 
+                             action={airpayCheckoutData.checkout_url} 
+                             method="post" 
+                             className="hidden"
+                           >
+                             <input type="hidden" name="privatekey" value={airpayCheckoutData.privatekey} />
+                             <input type="hidden" name="merchant_id" value={airpayCheckoutData.merchant_id} />
+                             <input type="hidden" name="encdata" value={airpayCheckoutData.encdata} />
+                             <input type="hidden" name="checksum" value={airpayCheckoutData.checksum} />
+                           </form>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
