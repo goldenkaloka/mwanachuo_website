@@ -142,6 +142,9 @@ const HeroCarousel = () => {
               src={getOptimizedImageUrl(activePromotions[current].src, { width: 1200, height: 400, quality: 80 })}
               alt={activePromotions[current].title}
               className="w-full h-full object-cover"
+              loading={current === 0 ? "eager" : "lazy"}
+              // @ts-ignore - fetchpriority is a valid experimental/modern attribute for LCP optimization
+              fetchpriority={current === 0 ? "high" : "auto"}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 md:via-black/20 to-transparent" />

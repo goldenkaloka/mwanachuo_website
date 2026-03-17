@@ -263,7 +263,7 @@ const AccommodationDetail = () => {
 
           {/* Side Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-card border border-border rounded-3xl p-8">
+            <div className="sticky top-24 bg-background border border-border rounded-3xl p-8 shadow-sm">
               <div className="mb-8">
                 <div className="flex items-baseline gap-1 mb-2">
                   <span className="text-4xl font-display font-black text-primary">
@@ -282,7 +282,7 @@ const AccommodationDetail = () => {
                   className="w-full bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                 >
                   <MessageSquare size={20} />
-                  Chat via WhatsApp
+                  Chat with Manager
                 </a>
                 <a
                   href={`tel:${accommodation.owner?.phone_number || ''}`}

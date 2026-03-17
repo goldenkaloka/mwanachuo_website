@@ -1,6 +1,7 @@
 import { useEffect, useState, createContext, useContext } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
+import { cacheStore } from "@/utils/cacheStore";
 
 type AuthContextType = {
   user: User | null;
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
-    const AUTH_INIT_TIMEOUT_MS = 12_000;
+    const AUTH_INIT_TIMEOUT_MS = 2_000;
 
     const initAuth = async () => {
       const timeoutId = setTimeout(() => {
@@ -122,13 +123,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    // Clear local state first to prevent race conditions in listeners
-    localStorage.removeItem("selected_university_id");
+    console.log("[useAuth] Signing out and clearing app state...");
+    try {
+      // 1. Clear all app cache first to prevent local state race conditions
+      cacheStore.clearAppCache();
 
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+      // 2. Perform Supabase signout
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("[useAuth] SignOut error:", err);
+    } finally {
+      // 3. Reset local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // 4. Force a clean reload to the landing page to ensure all contexts are reset
+      window.location.href = "/";
+    }
   };
 
   const updateProfile = async (updates: any) => {

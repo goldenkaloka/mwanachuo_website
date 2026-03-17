@@ -206,7 +206,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <div className="mb-8 p-6 rounded-md bg-secondary/50 border border-border">
+            <div className="mb-8 p-0">
               <span className="text-sm text-muted-foreground block mb-1">Total Price</span>
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-display font-black text-primary">
@@ -249,7 +249,7 @@ const ProductDetail = () => {
                 className="flex-1 bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
               >
                 <MessageCircle size={20} />
-                Chat via WhatsApp
+                Chat with Seller
               </a>
               <div className="flex gap-2">
                 <a

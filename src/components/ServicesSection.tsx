@@ -1,10 +1,12 @@
 import { Wrench, Truck, Paintbrush, Zap, Droplets, Shield, ArrowRight, Loader2, Scissors, GraduationCap, Car, Camera, Laptop, Music, Palette, Book } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { SectionSkeleton } from "./HomeSkeletons";
+import { cacheStore } from "@/utils/cacheStore";
 
 const iconMap: Record<string, any> = {
   "plumbing": Droplets,
@@ -26,9 +28,35 @@ const iconMap: Record<string, any> = {
 const ServicesSection = () => {
   const { selectedUniversity } = useUniversity();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Instant-On Persistence
+  const cacheKey = `cached_services_${selectedUniversity?.id || 'global'}`;
+  const getCachedData = () => {
+    return cacheStore.getItem<any[]>(cacheKey) || null;
+  };
+
+  // Prefetch function for details
+  const prefetchService = (id: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ["service", id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("services")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 60 * 1000,
+    });
+  };
 
   const { data: services, isLoading, isError } = useQuery({
     queryKey: ["services", selectedUniversity?.id, !!user],
+    initialData: getCachedData() || undefined,
     queryFn: async () => {
       let query = supabase
         .from("services")
@@ -45,9 +73,8 @@ const ServicesSection = () => {
       if (error) throw error;
       if (!data) return [];
 
-      // --- Marketplace Fairness Algorithm ---
       const now = new Date();
-      return data
+      const finalData = data
         .map(item => {
           let score = Math.random() * 10; // Base jitter
           if (item.is_featured) score += 100;
@@ -60,15 +87,15 @@ const ServicesSection = () => {
         })
         .sort((a, b) => b._score - a._score)
         .slice(0, 6);
+
+      cacheStore.setItem(cacheKey, finalData);
+      return finalData;
     },
+    staleTime: 0, // Force background refresh (SWR) even with initialData
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton />;
   }
 
   if (isError) return null;
@@ -96,6 +123,8 @@ const ServicesSection = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
+              onMouseEnter={() => prefetchService(service.id)}
+              onClick={() => navigate(`/service/${service.id}`)}
               className="relative group rounded-md border bg-card border-border hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
             >
               <Link to={`/service/${service.id}`} className="p-4 md:p-5 block h-full">

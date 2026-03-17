@@ -14,8 +14,8 @@ const Footer = () => {
             </p>
             <div className="flex flex-col gap-3 text-xs text-white/60">
               <span className="flex items-center gap-3"><MapPin size={14} className="text-white/80" /> Dar es Salaam, Tanzania</span>
-              <span className="flex items-center gap-3"><Phone size={14} className="text-white/80" /> +255 700 000 000</span>
-              <span className="flex items-center gap-3"><Mail size={14} className="text-white/80" /> hello@mwanachuoshop.co.tz</span>
+              <span className="flex items-center gap-3"><Phone size={14} className="text-white/80" /> +255 616 622 485</span>
+              <span className="flex items-center gap-3"><Mail size={14} className="text-white/80" /> mwanachuoshop@gmail.com</span>
             </div>
           </div>
 

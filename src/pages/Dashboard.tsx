@@ -22,6 +22,17 @@ import { useToast } from "@/hooks/useToast";
 import { formatDistanceToNow } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
+import EditListingDialog from "@/components/EditListingDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function safeFormatDistance(dateInput: string | number | Date | null | undefined): string {
   if (dateInput == null) return "Just now";
@@ -60,6 +71,11 @@ const Dashboard = () => {
   const [topUpAmount, setTopUpAmount] = useState("");
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
 
+  // Listing management state
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [deletingItem, setDeletingItem] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
@@ -77,6 +93,25 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleDeleteListing = async () => {
+    if (!deletingItem) return;
+    const table = deletingItem.seller_id
+      ? "products"
+      : deletingItem.provider_id
+      ? "services"
+      : "accommodations";
+    setIsDeleting(true);
+    const { error } = await supabase.from(table).delete().eq("id", deletingItem.id);
+    setIsDeleting(false);
+    setDeletingItem(null);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Listing deleted", description: "Your listing has been permanently removed." });
+      refetchListings();
+    }
+  };
+
   useEffect(() => {
     console.log('[Dashboard] State change:', {
       hasUser: !!user,
@@ -85,7 +120,7 @@ const Dashboard = () => {
     });
   }, [user, profile]);
 
-  const { data: myListings, isLoading: loadingListings } = useQuery({
+  const { data: myListings, isLoading: loadingListings, refetch: refetchListings } = useQuery({
     queryKey: ["my-listings", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -232,7 +267,8 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0B0E14] flex flex-col md:flex-row">
+    <>
+      <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0B0E14] flex flex-col md:flex-row">
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex w-64 flex-col bg-midnight border-r border-white/5 h-screen sticky top-0 text-white">
         <div className="p-6">
@@ -591,8 +627,22 @@ const Dashboard = () => {
                           </CardHeader>
                         </Link>
                         <CardContent className="p-4 pt-0 flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1 rounded-sm h-8 text-[10px]">Edit</Button>
-                          <Button variant="outline" size="sm" className="rounded-sm h-8 px-2 text-destructive"><Trash2 size={12} /></Button>
+                           <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 rounded-sm h-8 text-[10px]"
+                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-sm h-8 px-2 text-destructive hover:bg-destructive/10"
+                            onClick={(e) => { e.stopPropagation(); setDeletingItem(item); }}
+                          >
+                            <Trash2 size={12} />
+                          </Button>
                         </CardContent>
                       </Card>
                     );
@@ -724,7 +774,38 @@ const Dashboard = () => {
           </AnimatePresence>
         </div>
       </main>
-    </div>
+      </div>
+
+    {/* Edit Listing Dialog */}
+    <EditListingDialog
+      item={editingItem}
+      onClose={() => setEditingItem(null)}
+      onSaved={() => refetchListings()}
+    />
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={!!deletingItem} onOpenChange={() => setDeletingItem(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this listing?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <strong>"{deletingItem?.title || deletingItem?.name}"</strong> will be permanently removed from the marketplace. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteListing}
+            disabled={isDeleting}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            {isDeleting ? <Loader2 size={14} className="animate-spin mr-2" /> : null}
+            {isDeleting ? "Deleting..." : "Yes, Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 

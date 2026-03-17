@@ -26,7 +26,20 @@ const UniversityContext = createContext<UniversityContextType>({
 
 export const UniversityProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, profile, refreshProfile } = useAuth();
-  const [selectedUniversity, setSelectedUniversity] = useState<University | null>(null);
+  
+  // 0. Instant initialization from storage
+  const [selectedUniversity, setSelectedUniversity] = useState<University | null>(() => {
+    const saved = localStorage.getItem("selected_university"); // Store full object for 0ms load
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -47,15 +60,25 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
         console.error("[useUniversity] Error fetching universities:", err);
       } finally {
         setLoading(false);
+        // Fail-forward: even if fetch fails, mark as initialized to show guest UI
+        setIsInitialized(true); 
       }
     };
 
     fetchUniversities();
   }, []);
 
-  // 2. Initial selection & Sync (runs after universities are loaded)
+  // 2. Initial selection & Sync
   useEffect(() => {
-    if (loading || universities.length === 0) return;
+    // If universities haven't loaded yet, try to use stale data from localStorage for speed
+    if (loading && universities.length === 0) {
+      const savedId = localStorage.getItem("selected_university_id");
+      if (savedId && !selectedUniversity) {
+        // We can't set the full object yet because we don't have the list, 
+        // but we've already marked initialization as happening in parallel.
+      }
+      return;
+    }
 
     const syncUniversity = () => {
       // Priority 1: User Profile (Database)
@@ -107,6 +130,7 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
     console.log("[useUniversity] Setting university:", university.name);
     setSelectedUniversity(university);
     localStorage.setItem("selected_university_id", university.id);
+    localStorage.setItem("selected_university", JSON.stringify(university)); // Store full object
 
     if (user) {
       try {

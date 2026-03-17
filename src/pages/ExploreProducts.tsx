@@ -7,6 +7,7 @@ import { Search, Star, ShoppingCart, MapPin, Loader2, ArrowLeft, SlidersHorizont
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useCategories } from "@/hooks/useCategories";
 import { ProductExploreSkeleton } from "@/components/ExploreSkeletons";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";

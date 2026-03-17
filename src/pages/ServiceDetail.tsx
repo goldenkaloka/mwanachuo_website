@@ -199,7 +199,7 @@ const ServiceDetail = () => {
                     className="w-full bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
                   >
                     <MessageSquare size={20} />
-                    Chat via WhatsApp
+                    Chat with Provider
                   </a>
                   <a
                     href={`tel:${service.provider?.phone_number || ''}`}

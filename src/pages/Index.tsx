@@ -57,29 +57,23 @@ const Index = () => {
         <CategoryBar activeCategory={activeCategory} onSelect={setActiveCategory} />
 
         <div className="space-y-8">
-          {/* Initial loading state vs Content */}
-          {!uniInitialized ? (
-            <div className="space-y-12 py-8">
-              <ProductSkeleton />
-              <SectionSkeleton />
+          {/* Show ProductGrid if not specifically viewing Accommodations or Services */}
+          {activeCategory !== "Accommodations" && activeCategory !== "Services" && (
+            <ProductGrid categoryFilter={activeCategory} searchFilter={searchQuery} />
+          )}
+
+          {/* Show Accommodations if no category is selected OR if "Accommodations" is selected */}
+          {(!activeCategory || activeCategory === "Accommodations") && !searchQuery && (
+            <div className={!uniInitialized ? "opacity-50 pointer-events-none" : ""}>
+              <AccommodationsSection />
             </div>
-          ) : (
-            <>
-              {/* Show ProductGrid if not specifically viewing Accommodations or Services */}
-              {activeCategory !== "Accommodations" && activeCategory !== "Services" && (
-                <ProductGrid categoryFilter={activeCategory} searchFilter={searchQuery} />
-              )}
+          )}
 
-              {/* Show Accommodations if no category is selected OR if "Accommodations" is selected */}
-              {(!activeCategory || activeCategory === "Accommodations") && !searchQuery && (
-                <AccommodationsSection />
-              )}
-
-              {/* Show Services if no category is selected OR if "Services" is selected */}
-              {(!activeCategory || activeCategory === "Services") && !searchQuery && (
-                <ServicesSection />
-              )}
-            </>
+          {/* Show Services if no category is selected OR if "Services" is selected */}
+          {(!activeCategory || activeCategory === "Services") && !searchQuery && (
+            <div className={!uniInitialized ? "opacity-50 pointer-events-none" : ""}>
+              <ServicesSection />
+            </div>
           )}
         </div>
       </main>

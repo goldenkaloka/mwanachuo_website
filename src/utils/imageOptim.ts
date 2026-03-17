@@ -1,8 +1,9 @@
 /**
- * Utility functions for generating optimized Supabase image URLs.
- * Supabase Pro/Team plans or Image Transformations add-on is required for this to work natively.
- * If Image Transformations are not enabled, Supabase will simply return the original image 
- * (after redirect) so this is safe to use as a progressive enhancement.
+ * Utility functions for image URL handling.
+ * 
+ * Note: Supabase Image Transformations (/render/image/) require a paid add-on.
+ * This function currently returns the original URL to ensure images always load.
+ * To enable resizing/WebP conversion, activate "Image Transformations" in your Supabase project.
  */
 
 interface ImageOptions {
@@ -14,50 +15,38 @@ interface ImageOptions {
 }
 
 /**
- * Converts a raw Supabase storage public URL into an optimized transformation URL.
+ * Returns the image URL. When Supabase Image Transformations are enabled on your
+ * project (Dashboard → Storage → Image Transformations add-on), uncomment the
+ * transformation logic below to get automatic WebP conversion and resizing.
  * 
  * @param url The original Supabase storage public URL
- * @param options Transformation options
- * @returns The optimized URL
+ * @param options Transformation options (used when transformations are enabled)
+ * @returns The image URL
  */
-export const getOptimizedImageUrl = (url: string | null | undefined, options: ImageOptions = {}): string => {
+export const getOptimizedImageUrl = (url: string | null | undefined, _options: ImageOptions = {}): string => {
   if (!url) return "";
 
-  // Check if it's actually a Supabase storage URL
-  if (!url.includes("/storage/v1/object/public/")) {
-    return url;
-  }
+  // ✅ Always return the original URL so images load reliably.
+  // When you upgrade to a plan with Image Transformations, replace the line below
+  // with the transformation logic (see commented code below).
+  return url;
 
-  // Check if it's already a render URL
-  if (url.includes("/storage/v1/render/image/public/")) {
-    return url;
-  }
+  /* --- ENABLE THIS BLOCK when Supabase Image Transformations are active ---
+  if (!url.includes("/storage/v1/object/public/")) return url;
+  if (url.includes("/storage/v1/render/image/public/")) return url;
 
-  // Default options for fast loading
-  const {
-    width,
-    height,
-    resize = "cover",
-    quality = 80,
-    format = "webp" // WebP offers excellent compression for ecommerce
-  } = options;
-
+  const { width, height, resize = "cover", quality = 80, format = "webp" } = _options;
   try {
     const urlObj = new URL(url);
-    
-    // Convert /object/public/ path to /render/image/public/
     urlObj.pathname = urlObj.pathname.replace("/object/public/", "/render/image/public/");
-    
-    // Append transformation parameters
     if (width) urlObj.searchParams.set("width", width.toString());
     if (height) urlObj.searchParams.set("height", height.toString());
     if (resize) urlObj.searchParams.set("resize", resize);
     if (quality) urlObj.searchParams.set("quality", quality.toString());
     if (format) urlObj.searchParams.set("format", format);
-
     return urlObj.toString();
   } catch (e) {
-    console.error("Failed to parse image URL for optimization:", e);
-    return url; // Fallback to original
+    return url;
   }
+  --- END BLOCK --- */
 };

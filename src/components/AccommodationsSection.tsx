@@ -1,11 +1,13 @@
 import { Home, Loader2, MapPin, Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
+import { SectionSkeleton } from "./HomeSkeletons";
+import { cacheStore } from "@/utils/cacheStore";
 
 const formatPrice = (price: number) => {
     return `TSh ${price.toLocaleString()}`;
@@ -14,9 +16,35 @@ const formatPrice = (price: number) => {
 const AccommodationsSection = () => {
     const { selectedUniversity } = useUniversity();
     const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
+
+    // Instant-On Persistence
+    const cacheKey = `cached_accommodations_${selectedUniversity?.id || 'global'}`;
+    const getCachedData = () => {
+        return cacheStore.getItem<any[]>(cacheKey) || null;
+    };
+
+    // Prefetch function for details
+    const prefetchAccommodation = (id: string) => {
+        queryClient.prefetchQuery({
+            queryKey: ["accommodation", id],
+            queryFn: async () => {
+                const { data, error } = await supabase
+                    .from("accommodations")
+                    .select("*")
+                    .eq("id", id)
+                    .single();
+                if (error) throw error;
+                return data;
+            },
+            staleTime: 60 * 1000,
+        });
+    };
 
     const { data: accommodations, isLoading, isError } = useQuery({
         queryKey: ["accommodations", selectedUniversity?.id, !!user],
+        initialData: getCachedData() || undefined,
     queryFn: async () => {
       let query = supabase
         .from("accommodations")
@@ -33,9 +61,8 @@ const AccommodationsSection = () => {
       if (error) throw error;
       if (!data) return [];
 
-      // --- Marketplace Fairness Algorithm ---
       const now = new Date();
-      return data
+      const finalData = data
         .map(item => {
           let score = Math.random() * 5; // Low jitter for hostels (stability is better)
           // Accommodations don't have is_featured yet, but they have ratings
@@ -49,15 +76,15 @@ const AccommodationsSection = () => {
         })
         .sort((a, b) => b._score - a._score)
         .slice(0, 4);
+
+      cacheStore.setItem(cacheKey, finalData);
+      return finalData;
     },
+    staleTime: 0, // Force background refresh (SWR) even with initialData
     });
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-10">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-        );
+        return <SectionSkeleton />;
     }
 
     if (isError) return null;
@@ -83,7 +110,9 @@ const AccommodationsSection = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="flex flex-col bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 group"
+                        onMouseEnter={() => prefetchAccommodation(acc.id)}
+                        onClick={() => navigate(`/accommodation/${acc.id}`)}
+                        className="flex flex-col bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 group cursor-pointer"
                     >
                         <div className="w-full sm:w-48 h-48 shrink-0 bg-muted relative">
                             {acc.images && acc.images.length > 0 ? (

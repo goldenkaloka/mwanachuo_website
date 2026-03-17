@@ -1,11 +1,13 @@
 import { Star, ShoppingCart, Loader2, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
+import { ProductSkeleton } from "./HomeSkeletons";
+import { cacheStore } from "@/utils/cacheStore";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -14,9 +16,35 @@ const formatPrice = (price: number) => {
 const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string | null, searchFilter?: string | null }) => {
   const { selectedUniversity } = useUniversity();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Instant-On Persistence Logic
+  const cacheKey = `cached_products_${selectedUniversity?.id || 'global'}_${categoryFilter || 'all'}_${searchFilter || 'none'}`;
+  const getCachedData = () => {
+    return cacheStore.getItem<any[]>(cacheKey) || null;
+  };
+
+  // Prefetch function for product details
+  const prefetchProduct = (productId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ["product", productId],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 60 * 1000, // 1 minute
+    });
+  };
 
   const { data: products, isLoading, isError, error: queryError } = useQuery({
     queryKey: ["products", selectedUniversity?.id, categoryFilter, searchFilter, !!user],
+    initialData: getCachedData() || undefined,
     queryFn: async () => {
       try {
         let query = supabase
@@ -73,24 +101,24 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
           return { ...item, _fairness_score: score };
         });
 
-        // Final Sort & Slice to display limit (8)
-        return scoredData
+        // Save to cache for Instant-On load next time
+        const finalData = scoredData
           .sort((a, b) => b._fairness_score - a._fairness_score)
           .slice(0, 8);
+        
+        cacheStore.setItem(cacheKey, finalData);
+        return finalData;
       } catch (err) {
         console.error("ProductGrid query error:", err);
         throw err;
       }
     },
     enabled: true,
+    staleTime: 0, // Force background refresh (SWR) even with initialData
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <ProductSkeleton />;
   }
 
   if (!products || products.length === 0) {
@@ -121,7 +149,9 @@ const ProductGrid = ({ categoryFilter, searchFilter }: { categoryFilter?: string
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full"
+            onMouseEnter={() => prefetchProduct(product.id)}
+            className="group bg-card rounded-md overflow-hidden border border-border hover:border-primary/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
+            onClick={() => navigate(`/product/${product.id}`)}
           >
             <Link to={`/product/${product.id}`}>
               <div className="relative aspect-square overflow-hidden bg-muted">
