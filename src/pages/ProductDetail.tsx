@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useUniversity } from "@/hooks/useUniversity";
 import { toast } from "sonner";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
+import { formatWhatsAppNumber } from "@/utils/phoneFormatter";
 import {
   Star,
   ShoppingCart,
@@ -243,7 +244,7 @@ const ProductDetail = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 mt-auto">
               <a
-                href={`https://wa.me/${product.seller?.phone_number?.replace(/\+/g, '') || ''}?text=Hi, I'm interested in your ${product.title} on Mwanachuo Shop`}
+                href={`https://wa.me/${formatWhatsAppNumber(product.seller?.phone_number)}?text=Hi, I'm interested in your ${encodeURIComponent(product.title)} on Mwanachuo Shop`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"

@@ -22,7 +22,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState } from "react"; // Added useState for activeImage
+import { useState } from "react";
+import { formatWhatsAppNumber } from "@/utils/phoneFormatter";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
@@ -276,7 +277,7 @@ const AccommodationDetail = () => {
 
               <div className="space-y-4">
                 <a
-                  href={`https://wa.me/${accommodation.owner?.phone_number?.replace(/\+/g, '') || ''}?text=Hi, I'm interested in viewing ${accommodation.name} on Mwanachuo Shop`}
+                  href={`https://wa.me/${formatWhatsAppNumber(accommodation.owner?.phone_number)}?text=Hi, I'm interested in viewing ${encodeURIComponent(accommodation.name)} on Mwanachuo Shop`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-primary text-primary-foreground py-4 rounded-md font-bold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
