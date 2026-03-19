@@ -1,8 +1,8 @@
-import { useEffect, useState, createContext, useContext } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
-type University = {
+export type University = {
   id: string;
   name: string;
   location: string;
@@ -42,11 +42,16 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
 
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(!!selectedUniversity); // Initialize if we have local data
 
   // 1. Initial Universities Fetch
   useEffect(() => {
     const fetchUniversities = async () => {
+      // Safety timeout to ensure app doesn't stay "dead" if Supabase is slow
+      const timeoutId = setTimeout(() => {
+        if (!isInitialized) setIsInitialized(true);
+      }, 3000);
+
       try {
         const { data, error } = await supabase
           .from("universities")
@@ -59,8 +64,8 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
       } catch (err) {
         console.error("[useUniversity] Error fetching universities:", err);
       } finally {
+        clearTimeout(timeoutId);
         setLoading(false);
-        // Fail-forward: even if fetch fails, mark as initialized to show guest UI
         setIsInitialized(true); 
       }
     };
@@ -151,8 +156,16 @@ export const UniversityProvider = ({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const value = useMemo(() => ({
+    universities,
+    loading,
+    selectedUniversity,
+    setUniversity,
+    isInitialized,
+  }), [universities, loading, selectedUniversity, isInitialized]);
+
   return (
-    <UniversityContext.Provider value={{ selectedUniversity, setUniversity, universities, loading, isInitialized }}>
+    <UniversityContext.Provider value={value}>
       {children}
     </UniversityContext.Provider>
   );

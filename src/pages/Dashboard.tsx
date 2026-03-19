@@ -69,6 +69,8 @@ const Dashboard = () => {
 
   // AirPay Topup State
   const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpPhone, setTopUpPhone] = useState("");
+  const [topUpProvider, setTopUpProvider] = useState("");
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [airpayCheckoutData, setAirpayCheckoutData] = useState<any>(null);
 
@@ -81,6 +83,7 @@ const Dashboard = () => {
     if (profile) {
       setFullName(profile.full_name || "");
       setPhoneNumber(profile.phone_number || "");
+      setTopUpPhone(profile.phone_number || "");
       setBio(profile.bio || "");
     }
   }, [profile]);
@@ -217,9 +220,46 @@ const Dashboard = () => {
   useEffect(() => {
     // Automatically submit the AirPay form when the data is set
     if (airpayCheckoutData) {
-      const form = document.getElementById("airpay-checkout-form") as HTMLFormElement;
-      if (form) {
+      console.log("[Dashboard] PROCESSING AirPay data:", airpayCheckoutData);
+      if (airpayCheckoutData.success && airpayCheckoutData.checkout_url) {
+        console.log("[Dashboard] Redirecting to checkout:", airpayCheckoutData.checkout_url);
+        // Create payment form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = airpayCheckoutData.checkout_url;
+        
+        // Add required hidden fields
+        const fields = {
+          merchant_id: airpayCheckoutData.merchant_id,
+          privatekey: airpayCheckoutData.privatekey,
+          checksum: airpayCheckoutData.checksum,
+          encdata: airpayCheckoutData.encdata
+        };
+        
+        Object.entries(fields).forEach(([name, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
         form.submit();
+        // Reset loading state after a slight delay to allow the browser to initiate the POST
+        setTimeout(() => {
+          setIsTopUpLoading(false);
+          setAirpayCheckoutData(null); // Clear data so it can be re-triggered
+        }, 3000);
+      } else {
+        console.error("[Dashboard] AirPay error in response data:", airpayCheckoutData.error);
+        toast({
+          variant: "destructive",
+          title: "Payment Error",
+          description: airpayCheckoutData.error || "Failed to initialize payment. Please try again.",
+        });
+        setIsTopUpLoading(false); // Stop loading if there was an error in the checkout data
+        setAirpayCheckoutData(null); // Clear data
       }
     }
   }, [airpayCheckoutData]);
@@ -247,7 +287,8 @@ const Dashboard = () => {
         body: {
           amount: amount,
           user_id: user.id,
-          phone_number: phoneNumber || profile?.phone_number,
+          phone_number: topUpPhone || profile?.phone_number,
+          provider: topUpProvider,
           full_name: fullName || profile?.full_name,
           email: user.email,
           metadata: {
@@ -260,10 +301,14 @@ const Dashboard = () => {
         }
       });
 
-      if (error) throw error;
-      if (!data?.checkout_url) throw new Error("Failed to generate payment URL");
+      if (error) {
+        console.error("[Dashboard] EDGE FUNCTION INVOCATION ERROR:", error);
+        throw error;
+      }
 
-      // Set data to trigger the auto-submit form
+      console.log("[Dashboard] EDGE FUNCTION RESPONSE DATA:", data);
+
+      // Set data to trigger the auto-submit form or show error toast
       setAirpayCheckoutData(data);
 
     } catch (error: any) {
@@ -290,7 +335,7 @@ const Dashboard = () => {
     <>
       <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0B0E14] flex flex-col md:flex-row">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex w-64 flex-col bg-midnight border-r border-white/5 h-screen sticky top-0 text-white">
+      <aside className="hidden md:flex w-64 flex-col bg-midnight border-r border-white/5 fixed inset-y-0 left-0 z-40 text-white">
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2 mb-8">
             <span className="font-display text-xl font-bold">
@@ -443,7 +488,7 @@ const Dashboard = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:p-12">
+      <main className="flex-1 p-4 md:p-8 lg:p-12 md:ml-64">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
@@ -576,10 +621,34 @@ const Dashboard = () => {
                             className="h-11 rounded-md"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number</label>
+                          <Input
+                            type="tel"
+                            placeholder="e.g. 0712345678"
+                            value={topUpPhone}
+                            onChange={(e) => setTopUpPhone(e.target.value)}
+                            className="h-11 rounded-md"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Provider</label>
+                          <Select value={topUpProvider} onValueChange={setTopUpProvider}>
+                            <SelectTrigger className="h-11 rounded-md">
+                              <SelectValue placeholder="Select MNO Provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="VODACOM">Vodacom (M-Pesa)</SelectItem>
+                              <SelectItem value="TIGO">Tigo (Tigo Pesa)</SelectItem>
+                              <SelectItem value="AIRTEL">Airtel (Airtel Money)</SelectItem>
+                              <SelectItem value="HALOTEL">Halotel (HaloPesa)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <Button
                           className="w-full h-11 rounded-md font-bold"
                           onClick={handleAirPayTopUp}
-                          disabled={isTopUpLoading || !topUpAmount}
+                          disabled={isTopUpLoading || !topUpAmount || !topUpPhone || !topUpProvider}
                         >
                           {isTopUpLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CreditCard className="mr-2 h-4 w-4" />}
                           {isTopUpLoading ? "Initializing..." : "Top Up Now"}

@@ -6,8 +6,10 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/useToast";
 import { useUniversity } from "@/hooks/useUniversity";
 import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/hooks/useAuth";
 
 const Signup = () => {
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -15,6 +17,12 @@ const Signup = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
   const { universities } = useUniversity();
   const [universityId, setUniversityId] = useState("");
   const [userType, setUserType] = useState<"student" | "business">("student");

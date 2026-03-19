@@ -1,4 +1,4 @@
-import { useEffect, useState, createContext, useContext } from "react";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 import { cacheStore } from "@/utils/cacheStore";
@@ -56,65 +56,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
-    const AUTH_INIT_TIMEOUT_MS = 2_000;
 
-    const initAuth = async () => {
-      const timeoutId = setTimeout(() => {
-        if (isMounted) {
-          console.warn("Auth init timeout – setting loading false");
-          setLoading(false);
-        }
-      }, AUTH_INIT_TIMEOUT_MS);
+    // Unified function to handle profile and metadata sync
+    const syncProfileAndState = async (session: Session | null) => {
+      const currentUser = session?.user ?? null;
+      
+      if (!isMounted) return;
+      
+      setSession(session);
+      setUser(currentUser);
 
-      try {
-        // 1. Get initial session
-        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.error("Auth init error:", sessionError);
-        }
-
-        if (isMounted) {
-          setSession(initialSession);
-          setUser(initialSession?.user ?? null);
-        }
-
-        // 2. Fetch profile if session exists
-        if (initialSession?.user) {
-          const profileData = await fetchProfile(initialSession.user.id);
-          if (isMounted) setProfile(profileData);
-        }
-      } catch (err) {
-        console.error("Auth initialization caught exception:", err);
-      } finally {
-        clearTimeout(timeoutId);
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change event:", event);
-
-      if (isMounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-
-      if (session?.user) {
-        const p = await fetchProfile(session.user.id);
-        if (isMounted) setProfile(p);
+      if (currentUser) {
+        const profileData = await fetchProfile(currentUser.id);
+        if (isMounted) setProfile(profileData);
       } else {
         if (isMounted) setProfile(null);
       }
 
-      // After any session change event, we ensure loading is false
-      // But we only set it false once the initAuth has a chance to run or if the event is definitive
-      if (isMounted && event !== "INITIAL_SESSION") {
-        setLoading(false);
+      if (isMounted) setLoading(false);
+    };
+
+    // 1. Initial check (Immediate recovery)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isMounted) {
+        syncProfileAndState(session);
       }
+    }).catch(err => {
+      console.error("Supabase getSession error:", err);
+      if (isMounted) setLoading(false);
     });
 
-    initAuth();
+    // 2. Auth state subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[useAuth] Auth event:", event);
+      
+      // We ignore INITIAL_SESSION since we handle it via getSession for better control
+      if (event === "INITIAL_SESSION") return;
+      
+      if (isMounted) {
+        // For other events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED), sync state
+        syncProfileAndState(session);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -156,8 +139,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (data) setProfile(data);
   };
 
+  const value = React.useMemo(() => ({
+    user,
+    session,
+    profile,
+    loading,
+    signOut,
+    refreshProfile,
+    updateProfile
+  }), [user, session, profile, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
