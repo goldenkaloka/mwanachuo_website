@@ -20,6 +20,8 @@ const ListingForm = lazy(() => import("./pages/ListingForm"));
 const ExploreProducts = lazy(() => import("./pages/ExploreProducts"));
 const ExploreServices = lazy(() => import("./pages/ExploreServices"));
 const ExploreAccommodations = lazy(() => import("./pages/ExploreAccommodations"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -61,6 +63,8 @@ const App = () => (
                 <Route path="/products" element={<ExploreProducts />} />
                 <Route path="/services" element={<ExploreServices />} />
                 <Route path="/accommodations" element={<ExploreAccommodations />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

@@ -8,7 +8,7 @@ export const formatWhatsAppNumber = (phone?: string | null): string => {
   if (!phone) return "";
 
   // 1. Remove all non-numeric characters (spaces, dashes, parentheses) except '+'
-  let cleaned = phone.replace(/[^\d+]/g, "");
+  const cleaned = phone.replace(/[^\d+]/g, "");
 
   // 2. If it starts with '+', just remove the '+'
   if (cleaned.startsWith("+")) {

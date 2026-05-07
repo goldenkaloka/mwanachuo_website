@@ -11,9 +11,15 @@ import Footer from "@/components/Footer";
 import { useCategories } from "@/hooks/useCategories";
 import { ProductExploreSkeleton } from "@/components/ExploreSkeletons";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
+import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
+};
+
+const sanitizeSearchInput = (input: string): string => {
+  return input.replace(/[%_]/g, '\\$&').slice(0, 100);
 };
 
 const ExploreProducts = () => {
@@ -21,17 +27,30 @@ const ExploreProducts = () => {
   const { selectedUniversity } = useUniversity();
   const { user } = useAuth();
   const categoryFilter = searchParams.get("category");
-  const searchQuery = searchParams.get("search");
+  const [localSearch, setLocalSearch] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(localSearch, 300);
   const { data: dynamicCategories } = useCategories();
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch]);
 
   const { 
     data, 
     fetchNextPage, 
     hasNextPage, 
     isFetchingNextPage, 
-    isLoading 
+    isLoading,
+    isError,
+    refetch
   } = useInfiniteQuery({
-    queryKey: ["explore-products", selectedUniversity?.id, categoryFilter, searchQuery, !!user],
+    queryKey: ["explore-products", selectedUniversity?.id, categoryFilter, debouncedSearch, !!user],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       const pageSize = 15;
@@ -56,8 +75,9 @@ const ExploreProducts = () => {
         }
       }
 
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      if (debouncedSearch) {
+        const sanitized = sanitizeSearchInput(debouncedSearch);
+        query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
       }
 
       const { data, error } = await query;
@@ -108,13 +128,8 @@ const ExploreProducts = () => {
               <input
                 type="text"
                 placeholder="Search items..."
-                value={searchQuery || ""}
-                onChange={(e) => {
-                  const params = new URLSearchParams(searchParams);
-                  if (e.target.value) params.set("search", e.target.value);
-                  else params.delete("search");
-                  setSearchParams(params);
-                }}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-md bg-muted border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
@@ -155,6 +170,11 @@ const ExploreProducts = () => {
 
         {isLoading && products.length === 0 ? (
           <ProductExploreSkeleton />
+        ) : isError ? (
+          <div className="text-center py-12">
+            <p className="text-destructive font-semibold mb-4">Failed to load products. Please try again.</p>
+            <Button onClick={() => refetch()} variant="outline">Retry</Button>
+          </div>
         ) : products && products.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">

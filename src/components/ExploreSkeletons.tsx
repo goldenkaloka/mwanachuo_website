@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-const Shimmer = () => (
+export const Shimmer = () => (
   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_1.5s_infinite]" />
 );
 

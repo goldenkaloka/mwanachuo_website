@@ -5,7 +5,7 @@ import {
   User, MapPin, Camera, Save, ArrowLeft, Loader2,
   Package, Wrench, Bed, Plus, Wallet, Bell, Trash2,
   Settings, LayoutDashboard, CreditCard, History,
-  TrendingUp, Eye, CheckCircle2, AlertCircle, Clock,
+  TrendingUp, CheckCircle2, AlertCircle, Clock,
   Menu, X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,12 +67,13 @@ const Dashboard = () => {
   const [bio, setBio] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // AirPay Topup State
+  // AzamPay Topup State
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpPhone, setTopUpPhone] = useState("");
   const [topUpProvider, setTopUpProvider] = useState("");
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
-  const [airpayCheckoutData, setAirpayCheckoutData] = useState<any>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
+  const [txnReference, setTxnReference] = useState<string | null>(null);
 
   // Listing management state
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -187,6 +188,39 @@ const Dashboard = () => {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `avatars/${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+      await updateProfile({ avatar_url: data.publicUrl });
+
+      toast({
+        title: "Photo updated",
+        description: "Your profile photo has been updated.",
+      });
+    } catch (err: any) {
+      console.error("Avatar upload error:", err);
+      toast({
+        title: "Upload failed",
+        description: err.message || "Could not upload photo.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,108 +251,86 @@ const Dashboard = () => {
     }
   };
 
+  // Poll for payment success when a transaction is pending
   useEffect(() => {
-    // Automatically submit the AirPay form when the data is set
-    if (airpayCheckoutData) {
-      console.log("[Dashboard] PROCESSING AirPay data:", airpayCheckoutData);
-      if (airpayCheckoutData.success && airpayCheckoutData.checkout_url) {
-        console.log("[Dashboard] Redirecting to checkout:", airpayCheckoutData.checkout_url);
-        // Create payment form and submit
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = airpayCheckoutData.checkout_url;
+    let interval: number;
+    let isMounted = true;
+    
+    if (paymentStatus === 'pending' && txnReference) {
+      interval = window.setInterval(async () => {
+        if (!isMounted) return;
         
-        // Add required hidden fields
-        const fields = {
-          merchant_id: airpayCheckoutData.merchant_id,
-          privatekey: airpayCheckoutData.privatekey,
-          checksum: airpayCheckoutData.checksum,
-          encdata: airpayCheckoutData.encdata
-        };
+        const { data } = await supabase
+          .from('payment_transactions')
+          .select('status')
+          .eq('external_reference', txnReference)
+          .single();
         
-        Object.entries(fields).forEach(([name, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = name;
-          input.value = value;
-          form.appendChild(input);
-        });
+        if (!isMounted) return;
         
-        document.body.appendChild(form);
-        form.submit();
-        // Reset loading state after a slight delay to allow the browser to initiate the POST
-        setTimeout(() => {
+        if (data?.status === 'completed') {
+          setPaymentStatus('success');
           setIsTopUpLoading(false);
-          setAirpayCheckoutData(null); // Clear data so it can be re-triggered
-        }, 3000);
-      } else {
-        console.error("[Dashboard] AirPay error in response data:", airpayCheckoutData.error);
-        toast({
-          variant: "destructive",
-          title: "Payment Error",
-          description: airpayCheckoutData.error || "Failed to initialize payment. Please try again.",
-        });
-        setIsTopUpLoading(false); // Stop loading if there was an error in the checkout data
-        setAirpayCheckoutData(null); // Clear data
-      }
+          toast({ title: "Top Up Successful", description: `TSh ${topUpAmount} has been added to your wallet.` });
+          refetchWallet();
+          clearInterval(interval);
+        } else if (data?.status === 'failed') {
+          setPaymentStatus('failed');
+          setIsTopUpLoading(false);
+          toast({ title: "Payment Failed", description: "Transaction was not completed.", variant: "destructive" });
+          clearInterval(interval);
+        }
+      }, 3000);
     }
-  }, [airpayCheckoutData]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [paymentStatus, txnReference, toast, refetchWallet, topUpAmount]);
 
-  const handleAirPayTopUp = async () => {
+  const handleAzamPayTopUp = async () => {
     if (!user || !topUpAmount || isNaN(Number(topUpAmount))) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to top up.",
-        variant: "destructive"
-      });
+      toast({ title: "Invalid Amount", description: "Please enter a valid amount.", variant: "destructive" });
       return;
     }
 
     setIsTopUpLoading(true);
-    setAirpayCheckoutData(null); // Reset previous data
+    setPaymentStatus('idle');
 
     try {
       const amount = Number(topUpAmount);
       if (amount < 100) throw new Error("Minimum top up is TSh 100");
 
-      console.log("[Dashboard] Initializing AirPay payment for:", amount);
-
-      const { data, error } = await supabase.functions.invoke('airpay-payment', {
+      const { data, error } = await supabase.functions.invoke('azampay-payment', {
         body: {
           amount: amount,
-          user_id: user.id,
-          phone_number: topUpPhone || profile?.phone_number,
+          msisdn: topUpPhone || profile?.phone_number,
           provider: topUpProvider,
-          full_name: fullName || profile?.full_name,
-          email: user.email,
-          metadata: {
-             address: profile?.address || 'Tanzania',
-             city: profile?.city || 'Dar es Salaam',
-             state: profile?.state || 'Dar es Salaam',
-             pincode: profile?.pincode || '11111',
-             country: profile?.country || 'TZ',
-          }
+          paymentType: 'wallet_topup'
         }
       });
 
-      if (error) {
-        console.error("[Dashboard] EDGE FUNCTION INVOCATION ERROR:", error);
-        throw error;
+      if (error) throw error;
+
+      if (data.success) {
+        setTxnReference(data.reference);
+        setPaymentStatus('pending');
+        toast({
+          title: "USSD Push Sent",
+          description: "Please check your phone and enter your PIN to confirm payment.",
+        });
+      } else {
+        throw new Error(data.error || "Failed to initiate payment");
       }
 
-      console.log("[Dashboard] EDGE FUNCTION RESPONSE DATA:", data);
-
-      // Set data to trigger the auto-submit form or show error toast
-      setAirpayCheckoutData(data);
-
     } catch (error: any) {
-      console.error("[Dashboard] AirPay topup error:", error);
+      console.error("[Dashboard] AzamPay error:", error);
       toast({
         title: "Payment Error",
-        description: error.message || "Failed to initialize payment. Please try again.",
+        description: error.message || "Failed to initialize payment.",
         variant: "destructive"
       });
-      setIsTopUpLoading(false); // Only set to false on error, if success the page will redirect
+      setIsTopUpLoading(false);
     }
   };
 
@@ -327,7 +339,6 @@ const Dashboard = () => {
   const stats = [
     { label: "Active Listings", value: myListings?.total || 0, icon: LayoutDashboard, color: "text-blue-500" },
     { label: "Wallet Balance", value: `TSh ${wallet?.balance?.toLocaleString() || 0}`, icon: Wallet, color: "text-green-500" },
-    { label: "Total Views", value: "248", icon: Eye, color: "text-teal-500" }, // Mocked for now
     { label: "New Alerts", value: notifications?.filter(n => !n.is_read).length || 0, icon: Bell, color: "text-purple-500" },
   ];
 
@@ -608,7 +619,7 @@ const Dashboard = () => {
                     <Card className="bg-card border border-border">
                       <CardHeader>
                         <CardTitle className="text-sm">Quick Top Up</CardTitle>
-                        <CardDescription>Add funds securely via AirPay (Mobile Money / Cards)</CardDescription>
+                        <CardDescription>Add funds securely via AzamPay (USSD Push)</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -638,36 +649,23 @@ const Dashboard = () => {
                               <SelectValue placeholder="Select MNO Provider" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="VODACOM">Vodacom (M-Pesa)</SelectItem>
-                              <SelectItem value="TIGO">Tigo (Tigo Pesa)</SelectItem>
-                              <SelectItem value="AIRTEL">Airtel (Airtel Money)</SelectItem>
-                              <SelectItem value="HALOTEL">Halotel (HaloPesa)</SelectItem>
+                              <SelectItem value="Azampesa">AzamPesa</SelectItem>
+                              <SelectItem value="Tigo">Tigo Pesa</SelectItem>
+                              <SelectItem value="Mpesa">M-Pesa</SelectItem>
+                              <SelectItem value="Airtel">Airtel Money</SelectItem>
+                              <SelectItem value="Halopesa">HaloPesa</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <Button
                           className="w-full h-11 rounded-md font-bold"
-                          onClick={handleAirPayTopUp}
+                          onClick={handleAzamPayTopUp}
                           disabled={isTopUpLoading || !topUpAmount || !topUpPhone || !topUpProvider}
                         >
-                          {isTopUpLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                          {isTopUpLoading ? "Initializing..." : "Top Up Now"}
+                          {paymentStatus === 'pending' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                          {paymentStatus === 'pending' ? "Waiting for PIN..." : isTopUpLoading ? "Initializing..." : "Top Up Now"}
                         </Button>
-                        <p className="text-[10px] text-muted-foreground italic text-center">Powered by AirPay Tanzania</p>
-                        
-                        {airpayCheckoutData && (
-                           <form 
-                             id="airpay-checkout-form" 
-                             action={airpayCheckoutData.checkout_url} 
-                             method="post" 
-                             className="hidden"
-                           >
-                             <input type="hidden" name="privatekey" value={airpayCheckoutData.privatekey} />
-                             <input type="hidden" name="merchant_id" value={airpayCheckoutData.merchant_id} />
-                             <input type="hidden" name="encdata" value={airpayCheckoutData.encdata} />
-                             <input type="hidden" name="checksum" value={airpayCheckoutData.checksum} />
-                           </form>
-                        )}
+                        <p className="text-[10px] text-muted-foreground italic text-center">Powered by AzamPay Tanzania</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -687,7 +685,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <p className={`text-xs font-bold ${tx.type === 'deposit' ? 'text-green-500' : 'text-teal-500'}`}>
-                            {tx.type === 'deposit' ? '+' : '-'} {tx.amount.toLocaleString()}
+                            {tx.type === 'deposit' ? '+' : '-'} {(tx.amount ?? 0).toLocaleString()}
                           </p>
                         </div>
                       ))}
@@ -798,7 +796,10 @@ const Dashboard = () => {
                           <AvatarImage src={profile?.avatar_url} />
                           <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">{profile?.full_name?.substring(0, 2)}</AvatarFallback>
                         </Avatar>
-                        <button type="button" className="absolute bottom-0 right-0 p-2 rounded-sm bg-primary text-primary-foreground" aria-label="Change profile photo"><Camera size={14} /></button>
+                        <label className="absolute bottom-0 right-0 p-2 rounded-sm bg-primary text-primary-foreground cursor-pointer" aria-label="Change profile photo">
+                          <Camera size={14} />
+                          <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                        </label>
                       </div>
                       <div className="flex-1 pb-1">
                         <h3 className="text-xl font-bold">{profile?.full_name}</h3>

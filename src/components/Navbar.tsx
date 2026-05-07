@@ -87,9 +87,9 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="px-5 py-2.5 rounded-md bg-white text-primary text-sm font-bold hover:bg-white/90 transition-all active:scale-95">
-                Login
-              </Link>
+            <Link to="/login" className="px-5 py-2.5 rounded-md bg-white text-primary text-sm font-bold hover:bg-white/90 transition-all active:scale-95 button-shine">
+              Login
+            </Link>
             )}
             <button className="relative p-2 rounded-lg hover:bg-white/10 transition-colors text-primary-foreground">
               <ShoppingCart size={22} />
@@ -107,6 +107,8 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
             <input
               type="text"
               placeholder="Search products, services..."
+              value={searchQuery ?? ""}
+              onChange={(e) => onSearch?.(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-md bg-white/10 border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none"
             />
           </div>
@@ -154,7 +156,7 @@ const Navbar = ({ searchQuery, onSearch }: NavbarProps) => {
             <Link
               key={cat}
               to={`/?category=${cat}`}
-              className="text-[10px] font-black text-white/40 hover:text-white transition-all whitespace-nowrap uppercase tracking-[0.15em] hover:scale-105"
+              className="text-[10px] font-black text-white/40 hover:text-white transition-all whitespace-nowrap uppercase tracking-[0.15em] hover:scale-105 link-underline"
             >
               {cat}
             </Link>

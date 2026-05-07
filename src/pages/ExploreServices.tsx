@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -9,9 +9,15 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ServiceExploreSkeleton } from "@/components/ExploreSkeletons";
+import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const formatPrice = (price: number) => {
   return `TSh ${price.toLocaleString()}`;
+};
+
+const sanitizeSearchInput = (input: string): string => {
+  return input.replace(/[%_]/g, '\\$&').slice(0, 100);
 };
 
 const ExploreServices = () => {
@@ -19,16 +25,29 @@ const ExploreServices = () => {
   const { selectedUniversity } = useUniversity();
   const { user } = useAuth();
   const categoryFilter = searchParams.get("category");
-  const searchQuery = searchParams.get("search");
+  const [localSearch, setLocalSearch] = useState(searchParams.get("search") || "");
+  const debouncedSearch = useDebounce(localSearch, 300);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch]);
 
   const { 
     data, 
     fetchNextPage, 
     hasNextPage, 
     isFetchingNextPage, 
-    isLoading 
+    isLoading,
+    isError,
+    refetch
   } = useInfiniteQuery({
-    queryKey: ["explore-services", selectedUniversity?.id, categoryFilter, searchQuery, !!user],
+    queryKey: ["explore-services", selectedUniversity?.id, categoryFilter, debouncedSearch, !!user],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       const pageSize = 15;
@@ -49,8 +68,9 @@ const ExploreServices = () => {
         query = query.ilike("category", `%${categoryFilter}%`);
       }
 
-      if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      if (debouncedSearch) {
+        const sanitized = sanitizeSearchInput(debouncedSearch);
+        query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
       }
 
       const { data, error } = await query;
@@ -97,16 +117,11 @@ const ExploreServices = () => {
 
           <div className="relative flex-1 md:w-64">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
+              <input
               type="text"
               placeholder="What do you need help with?"
-              value={searchQuery || ""}
-              onChange={(e) => {
-                const params = new URLSearchParams(searchParams);
-                if (e.target.value) params.set("search", e.target.value);
-                else params.delete("search");
-                setSearchParams(params);
-              }}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-md bg-muted border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
@@ -143,6 +158,11 @@ const ExploreServices = () => {
 
         {isLoading && services.length === 0 ? (
           <ServiceExploreSkeleton />
+        ) : isError ? (
+          <div className="text-center py-12">
+            <p className="text-destructive font-semibold mb-4">Failed to load services. Please try again.</p>
+            <Button onClick={() => refetch()} variant="outline">Retry</Button>
+          </div>
         ) : services && services.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">

@@ -8,6 +8,14 @@ import { useUniversity } from "@/hooks/useUniversity";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/hooks/useAuth";
 
+const validatePassword = (pwd: string): string | null => {
+  if (pwd.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter";
+  if (!/[a-z]/.test(pwd)) return "Password must contain at least one lowercase letter";
+  if (!/[0-9]/.test(pwd)) return "Password must contain at least one number";
+  return null;
+};
+
 const Signup = () => {
   const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
@@ -15,6 +23,7 @@ const Signup = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,6 +69,12 @@ const Signup = () => {
     e.preventDefault();
     if (!universityId) {
       setError("Please select your university.");
+      return;
+    }
+    
+    const pwdError = validatePassword(password);
+    if (pwdError) {
+      setPasswordError(pwdError);
       return;
     }
 
@@ -315,11 +330,18 @@ const Signup = () => {
                   type="password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError(validatePassword(e.target.value));
+                  }}
                   className="w-full pl-10 pr-4 py-3 rounded-md bg-muted border-none text-sm focus:ring-2 focus:ring-primary/30"
                   placeholder="••••••••"
                 />
               </div>
+              {passwordError && (
+                <p className="text-xs text-destructive mt-1">{passwordError}</p>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-1">Min 8 characters with uppercase, lowercase, and number</p>
             </div>
 
             <button
@@ -330,6 +352,13 @@ const Signup = () => {
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus size={18} />}
               {loading ? "Creating account..." : "Sign up"}
             </button>
+
+            <p className="text-[10px] text-center text-muted-foreground mt-4 px-2">
+              By signing up, you agree to our{" "}
+              <Link to="/terms-of-service" className="text-primary hover:underline">Terms of Service</Link>{" "}
+              and{" "}
+              <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>.
+            </p>
           </form>
 
           <div className="mt-8 pt-6 border-t border-border text-center">

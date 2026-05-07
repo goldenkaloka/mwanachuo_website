@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { AccommodationDetailSkeleton } from "@/components/DetailSkeletons";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
@@ -33,7 +34,7 @@ const AccommodationDetail = () => {
   const { id } = useParams();
   const [activeImage, setActiveImage] = useState(0); // Added state for active image
 
-  const { data: accommodation, isLoading, error } = useQuery({
+  const { data: accommodation, isLoading } = useQuery({
     queryKey: ["accommodation", id],
     queryFn: async () => {
       console.log("[AccommodationDetail] Fetching ID:", id);
@@ -103,9 +104,7 @@ const AccommodationDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <AccommodationDetailSkeleton />
         <Footer />
       </div>
     );

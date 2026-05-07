@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ServiceDetailSkeleton } from "@/components/DetailSkeletons";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getOptimizedImageUrl } from "@/utils/imageOptim";
@@ -27,7 +28,7 @@ const formatPrice = (price: number) => {
 const ServiceDetail = () => {
   const { id } = useParams();
 
-  const { data: service, isLoading, error } = useQuery({
+  const { data: service, isLoading } = useQuery({
     queryKey: ["service", id],
     queryFn: async () => {
       console.log("[ServiceDetail] Fetching ID:", id);
@@ -88,9 +89,7 @@ const ServiceDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <ServiceDetailSkeleton />
         <Footer />
       </div>
     );

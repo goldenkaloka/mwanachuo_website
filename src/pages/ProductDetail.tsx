@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ProductDetailSkeleton } from "@/components/DetailSkeletons";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -30,7 +31,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [activeImage, setActiveImage] = useState(0);
 
-  const { data: product, isLoading, error } = useQuery({
+  const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
       console.log("[ProductDetail] Fetching ID:", id);
@@ -97,9 +98,7 @@ const ProductDetail = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <ProductDetailSkeleton />
         <Footer />
       </div>
     );
